@@ -63,12 +63,12 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
             {isPushing ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
-                <span>Mengirim ke Alat...</span>
+                <span>Mengirim...</span>
               </>
             ) : (
               <>
                 <Send size={14} />
-                <span>Sinkronkan ke Alat</span>
+                <span>Kirim ke Alat</span>
               </>
             )}
           </button>
@@ -92,12 +92,12 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
               className="flex-1 py-2.5 px-3 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-emerald-700 flex items-center justify-center gap-1.5 cursor-pointer transition shadow-sm"
             >
               <Download size={14} />
-              <span>Download config.json</span>
+              <span>Download JSON</span>
             </button>
 
             <label className="flex-1 py-2.5 px-3 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-gray-700 flex items-center justify-center gap-1.5 cursor-pointer transition shadow-sm text-center">
               <Upload size={14} />
-              <span>Upload config.json</span>
+              <span>Upload JSON</span>
               <input
                 type="file"
                 accept=".json"

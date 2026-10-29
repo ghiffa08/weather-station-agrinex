@@ -225,36 +225,37 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
             <ArrowLeft size={18} />
           </button>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-[10px] uppercase tracking-widest font-extrabold text-[var(--color-neo-text-muted)]">
-                Agrinex Station
+                Agrinex
               </span>
               <span className="text-gray-300">/</span>
               <span className="text-[10px] uppercase tracking-widest font-extrabold text-sky-600">
-                Pengaturan Perangkat
+                Pengaturan
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2 mt-0.5">
-              <span>Pengaturan Alat & Backend</span>
+              <span>Pengaturan Alat</span>
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <button
             onClick={handleResetDefault}
-            className="px-3 py-2 rounded-xl neo-pressed hover:bg-gray-200/60 active:scale-95 text-xs font-bold text-gray-600 flex items-center gap-1.5 cursor-pointer transition"
+            className="px-3 py-2 rounded-xl neo-pressed hover:bg-gray-200/60 active:scale-95 text-xs font-bold text-gray-600 flex items-center gap-1.5 cursor-pointer transition whitespace-nowrap"
             title="Reset ke Default Pabrik"
           >
             <RotateCcw size={14} />
-            <span className="hidden sm:inline">Reset Default</span>
+            <span>Reset</span>
           </button>
           <button
             onClick={handleSaveLocal}
-            className="px-4 py-2 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-sky-700 flex items-center gap-1.5 cursor-pointer transition shadow-sm"
+            className="px-3.5 py-2 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-sky-700 flex items-center gap-1.5 cursor-pointer transition shadow-sm whitespace-nowrap"
+            title="Simpan Pengaturan"
           >
             <Check size={15} />
-            <span>Simpan Perubahan</span>
+            <span>Simpan</span>
           </button>
         </div>
       </div>

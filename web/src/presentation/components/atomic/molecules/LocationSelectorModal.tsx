@@ -384,7 +384,7 @@ export const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
               className="w-full py-2.5 px-4 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-sky-800 flex items-center justify-center gap-1.5 cursor-pointer transition shadow-sm mt-1"
             >
               <Check size={14} className="text-sky-600" />
-              <span>Terapkan Wilayah Terpilih</span>
+              <span>Terapkan</span>
             </button>
           </div>
         )}
