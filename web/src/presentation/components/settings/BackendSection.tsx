@@ -17,12 +17,12 @@ export const BackendSection: React.FC<BackendSectionProps> = ({
   return (
     <Card className="space-y-5 animate-fade-in">
       <div className="border-b border-gray-300/40 pb-3">
-        <h2 className="text-sm font-extrabold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
           <Database size={16} className="text-sky-600" />
-          <span>Pilihan Protokol Ingestion Backend (Tanpa Hardcode)</span>
+          <span>Protokol Backend</span>
         </h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Pilih platform penyimpanan atau broker MQTT yang digunakan oleh alat untuk mengirim telemetry secara periodik.
+          Pilih tujuan pengiriman data telemetri stasiun
         </p>
       </div>
 

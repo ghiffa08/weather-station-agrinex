@@ -22,12 +22,12 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
   return (
     <Card className="space-y-5 animate-fade-in">
       <div className="border-b border-gray-300/40 pb-3">
-        <h2 className="text-sm font-extrabold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
           <Send size={16} className="text-sky-600" />
-          <span>Sinkronisasi Nirkabel (OTA) & Manajemen File Konfigurasi</span>
+          <span>Sinkronisasi OTA &amp; File</span>
         </h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Kirim konfigurasi langsung ke ESP8266 melalui WiFi lokal atau backup file config.json untuk di-flash ke LittleFS.
+          Kirim konfigurasi nirkabel atau cadangkan file config.json
         </p>
       </div>
 
@@ -37,14 +37,14 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Wifi size={16} className="text-sky-600" />
-              <h3 className="text-xs font-bold text-gray-800">1. Push Konfigurasi via WiFi (OTA)</h3>
+              <h3 className="text-xs font-bold text-gray-800">1. Push via WiFi (OTA)</h3>
             </div>
             <p className="text-[11px] text-gray-500">
-              ESP8266 menjalankan REST Server di port 80. Masukkan alamat IP alat untuk sinkronisasi seketika tanpa mencolokkan kabel USB.
+              Sinkronisasi konfigurasi langsung ke mikrokontroler via jaringan lokal.
             </p>
 
             <div className="space-y-1 pt-1 text-xs">
-              <label className="font-bold text-gray-700 block">IP Address ESP8266 di Jaringan Lokal</label>
+              <label className="font-bold text-gray-700 block">IP Address Perangkat</label>
               <input
                 type="text"
                 value={deviceIp}
@@ -68,7 +68,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
             ) : (
               <>
                 <Send size={14} />
-                <span>Sinkronkan ke ESP8266 & Restart</span>
+                <span>Sinkronkan ke Alat</span>
               </>
             )}
           </button>
@@ -79,7 +79,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Download size={16} className="text-emerald-600" />
-              <h3 className="text-xs font-bold text-gray-800">2. Backup File config.json (LittleFS)</h3>
+              <h3 className="text-xs font-bold text-gray-800">2. Backup File config.json</h3>
             </div>
             <p className="text-[11px] text-gray-500">
               Download file JSON untuk disimpan di kartu memori atau di-upload langsung ke folder data LittleFS PlatformIO.

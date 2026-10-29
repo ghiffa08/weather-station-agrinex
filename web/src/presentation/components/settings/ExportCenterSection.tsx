@@ -26,12 +26,12 @@ export const ExportCenterSection: React.FC<ExportCenterSectionProps> = ({
   return (
     <Card className="space-y-5 animate-fade-in">
       <div className="border-b border-gray-300/40 pb-3">
-        <h2 className="text-sm font-extrabold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
           <FileSpreadsheet size={16} className="text-sky-600" />
-          <span>Ekspor Data Telemetry Sensor (CSV & JSON)</span>
+          <span>Ekspor Data Sensor</span>
         </h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Ekspor seluruh riwayat pengamatan sensor lapangan ke format data tabel yang kompatibel dengan Excel atau analisis pemrograman data science.
+          Unduh riwayat telemetri dalam format CSV atau JSON
         </p>
       </div>
 
@@ -44,15 +44,15 @@ export const ExportCenterSection: React.FC<ExportCenterSectionProps> = ({
                 <FileSpreadsheet size={18} />
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-gray-800">Format CSV (Excel & Calc)</h3>
-                <span className="text-[10px] text-gray-500 font-mono">RFC 4180 + UTF-8 BOM Compliant</span>
+                <h3 className="text-sm font-bold text-gray-800">Format CSV (Excel)</h3>
+                <span className="text-[10px] text-gray-500">RFC 4180 + UTF-8 BOM</span>
               </div>
             </div>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Menyertakan UTF-8 BOM agar Microsoft Excel di Windows dapat langsung membuka data tanpa encoding rusak. Kolom meliputi timestamp ISO, waktu lokal WIB, Suhu, Kelembapan, Kec. Angin, Radiasi Cahaya, Tegangan/Arus Baterai LiFePO4, dan RSSI.
+              Kompatibel langsung dengan Microsoft Excel dan Google Sheets. Kolom mencakup timestamp, suhu, kelembapan, angin, lux, dan tegangan baterai.
             </p>
             <div className="text-[11px] text-gray-500">
-              Total baris siap diekspor: <strong className="text-gray-800 font-bold">{telemetryLogs.length} data</strong>
+              Total data: <strong className="text-gray-800 font-bold">{telemetryLogs.length} baris</strong>
             </div>
           </div>
 
@@ -73,8 +73,8 @@ export const ExportCenterSection: React.FC<ExportCenterSectionProps> = ({
                 <FileJson size={18} />
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-gray-800">Format JSON (Data Science & API)</h3>
-                <span className="text-[10px] text-gray-500 font-mono">Standard JSON Array + Metadata</span>
+                <h3 className="text-sm font-bold text-gray-800">Format JSON (API)</h3>
+                <span className="text-[10px] text-gray-500">Structured JSON Array</span>
               </div>
             </div>
             <p className="text-xs text-gray-600 leading-relaxed">

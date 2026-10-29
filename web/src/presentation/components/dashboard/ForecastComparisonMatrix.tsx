@@ -42,7 +42,7 @@ export const ForecastComparisonMatrix: React.FC<ForecastComparisonMatrixProps> =
           <div className="flex items-center justify-between border-b border-gray-300/40 pb-2.5 mb-3">
             <div className="flex items-center gap-2">
               <Calendar size={16} className="text-gray-700" />
-              <h2 className="text-xs sm:text-sm font-bold text-gray-700">Prakiraan Cuaca Besok</h2>
+              <h2 className="text-xs sm:text-sm font-bold text-gray-700">Prakiraan Besok</h2>
             </div>
             <span className="text-[10px] neo-pressed text-gray-800 px-2 py-0.5 rounded-full font-bold">BMKG</span>
           </div>
@@ -96,7 +96,7 @@ export const ForecastComparisonMatrix: React.FC<ForecastComparisonMatrixProps> =
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <ArrowUpDown size={16} className="text-gray-700" />
-            <h2 className="text-xs sm:text-base font-bold text-gray-700">Perbandingan Real-time Sensor vs BMKG</h2>
+            <h2 className="text-xs sm:text-base font-bold text-gray-700">Komparasi Sensor vs BMKG</h2>
           </div>
           <span className="text-[10px] text-gray-400 font-semibold uppercase hidden sm:inline">Live Sync</span>
         </div>

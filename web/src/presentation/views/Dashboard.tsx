@@ -391,9 +391,9 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
 
       {/* Recharts Analytics Widgets */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-        <ChartWidget data={tempChart} title="Perbandingan Suhu Udara" unit="°C" />
-        <ChartWidget data={humChart} title="Perbandingan Kelembapan Relatif" unit="%" />
-        <ChartWidget data={windChart} title="Perbandingan Kecepatan Angin (Normalisasi u2)" unit=" m/s" />
+        <ChartWidget data={tempChart} title="Tren Suhu Udara" unit="°C" />
+        <ChartWidget data={humChart} title="Tren Kelembapan" unit="%" />
+        <ChartWidget data={windChart} title="Tren Kecepatan Angin" unit=" m/s" />
       </section>
 
       {/* Benchmark Statistical Evaluation Cards */}

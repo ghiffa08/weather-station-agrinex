@@ -47,8 +47,8 @@ export function ChartWidget({ data, title, fieldKey = 'Field', bmkgKey = 'BMKG',
             <BarChart3 size={15} className="text-gray-800" />
             <h3 className="text-base font-bold text-gray-800">{title}</h3>
           </div>
-          <p className="text-xs text-[var(--color-neo-text-muted)]">
-            Perbandingan data sensor lapangan vs observasi BMKG
+          <p className="text-[11px] text-[var(--color-neo-text-muted)]">
+            Sensor Lapangan vs Model BMKG
           </p>
         </div>
         {/* Time range tabs */}

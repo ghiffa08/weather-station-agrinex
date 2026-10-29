@@ -15,12 +15,12 @@ export const ModulesSection: React.FC<ModulesSectionProps> = ({
   return (
     <Card className="space-y-4">
       <div className="border-b border-gray-300/40 pb-3">
-        <h2 className="text-sm font-extrabold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+        <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
           <Cpu size={16} className="text-sky-600" />
-          <span>A. Status Modul Hardware Aktif</span>
+          <span>Modul Sensor Aktif</span>
         </h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Uncheck modul yang tidak dipasang secara fisik pada PCB/breadboard untuk mencegah terjadinya SPI timeout atau hang pada loop ESP8266.
+          Aktifkan atau nonaktifkan modul hardware pada stasiun
         </p>
       </div>
 

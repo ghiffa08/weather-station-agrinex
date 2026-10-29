@@ -198,11 +198,11 @@ export const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
               <MapPin size={20} />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-extrabold text-gray-900 leading-tight">
-                Pilih Wilayah Referensi BMKG
+              <h2 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">
+                Pilih Lokasi BMKG
               </h2>
               <p className="text-[11px] text-gray-500 mt-0.5">
-                Sinkronisasi data cuaca makro regional secara dinamis
+                Sinkronisasi cuaca wilayah BMKG
               </p>
             </div>
           </div>
@@ -220,7 +220,7 @@ export const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">
-                Wilayah Aktif Saat Ini
+                Lokasi Aktif
               </span>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-sky-500/10 text-sky-700">
                 ADM4: {activeLoc.adm4}
@@ -230,7 +230,7 @@ export const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
               {activeLoc.village}, {activeLoc.subdistrict}
             </p>
             <p className="text-[10px] text-gray-500 font-medium">
-              {activeLoc.district}, {activeLoc.province} • Elevasi {activeLoc.elevation_m} mdpl
+              {activeLoc.district}, {activeLoc.province} • {activeLoc.elevation_m} mdpl
             </p>
           </div>
           {activeLoc.adm4 !== DEFAULT_LOCATION.adm4 && (
@@ -249,7 +249,7 @@ export const LocationSelectorModal: React.FC<LocationSelectorModalProps> = ({
         <div className="space-y-1.5">
           <span className="text-[9px] uppercase tracking-wider font-extrabold text-gray-500 flex items-center gap-1">
             <Sparkles size={11} className="text-amber-500" />
-            <span>Pilihan Cepat Wilayah Populer</span>
+            <span>Lokasi Populer</span>
           </span>
           <div className="flex flex-wrap gap-1.5">
             {POPULAR_LOCATIONS.map(item => {

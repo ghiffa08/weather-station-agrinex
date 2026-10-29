@@ -65,11 +65,11 @@ export const AgroClimateAdvisory: React.FC<AgroClimateAdvisoryProps> = ({
             <Sparkles size={16} />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-extrabold text-gray-900 tracking-tight">
-              Panduan Agroklimat &amp; Rekomendasi Budidaya
+            <h3 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight">
+              Rekomendasi Budidaya
             </h3>
             <p className="text-xs text-gray-500">
-              Rekomendasi mikroklimat presisi untuk fertigasi, irigasi, dan proteksi tanaman.
+              Panduan mikroklimat untuk irigasi, fertigasi, dan proteksi tanaman
             </p>
           </div>
         </div>

@@ -284,39 +284,39 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
       <div className="flex rounded-2xl p-1.5 neo-pressed gap-1 text-xs font-bold overflow-x-auto">
         <button
           onClick={() => setActiveTab('modules')}
-          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+          className={`flex-1 min-w-[95px] py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'modules' ? 'neo-flat text-sky-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <Cpu size={15} />
-          <span>1. Modul & Pin Sensor</span>
+          <Cpu size={14} />
+          <span>1. Modul</span>
         </button>
         <button
           onClick={() => setActiveTab('backend')}
-          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+          className={`flex-1 min-w-[95px] py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'backend' ? 'neo-flat text-sky-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <Database size={15} />
-          <span>2. Protokol Backend</span>
+          <Database size={14} />
+          <span>2. Backend</span>
         </button>
         <button
           onClick={() => setActiveTab('sync')}
-          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+          className={`flex-1 min-w-[95px] py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'sync' ? 'neo-flat text-sky-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <Send size={15} />
-          <span>3. Sinkron OTA & File</span>
+          <Send size={14} />
+          <span>3. Sinkron</span>
         </button>
         <button
           onClick={() => setActiveTab('export')}
-          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+          className={`flex-1 min-w-[95px] py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'export' ? 'neo-flat text-sky-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <FileSpreadsheet size={15} />
-          <span>4. Ekspor Data Sensor</span>
+          <FileSpreadsheet size={14} />
+          <span>4. Ekspor</span>
         </button>
       </div>
 

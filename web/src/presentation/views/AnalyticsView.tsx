@@ -328,19 +328,19 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       {/* 5. Time Series Comparative Recharts */}
       <section className="space-y-4">
         <div className="border-b border-gray-300/40 pb-2">
-          <h2 className="text-sm font-extrabold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+          <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
             <BarChart3 size={16} className="text-sky-600" />
-            <span>Grafik Deret Waktu Komparatif (Sensor Lapangan vs Model BMKG)</span>
+            <span>Grafik Tren Cuaca</span>
           </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Perbandingan fluktuasi mikroklimat tajuk tanaman dengan data prakiraan/observasi makro wilayah BMKG.
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            Komparasi deret waktu sensor stasiun vs model BMKG
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <ChartWidget data={tempChart} title="Perbandingan Suhu Udara" unit="°C" />
-          <ChartWidget data={humChart} title="Perbandingan Kelembapan Relatif" unit="%" />
-          <ChartWidget data={windChart} title="Kecepatan Angin (Normalisasi u2)" unit=" m/s" />
+          <ChartWidget data={tempChart} title="Tren Suhu Udara" unit="°C" />
+          <ChartWidget data={humChart} title="Tren Kelembapan" unit="%" />
+          <ChartWidget data={windChart} title="Tren Kecepatan Angin" unit=" m/s" />
         </div>
       </section>
 
