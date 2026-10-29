@@ -225,25 +225,25 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] uppercase tracking-widest font-extrabold text-[var(--color-neo-text-muted)]">
-                Agrinex Station
+                Agrinex
               </span>
               <span className="text-gray-300">/</span>
               <span className="text-[10px] uppercase tracking-widest font-extrabold text-sky-600">
-                Pusat Analisis
+                Analisis
               </span>
             </div>
-            <h1 className="text-lg sm:text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2 mt-0.5">
-              <span>Analisis Agroklimat &amp; Validasi BMKG</span>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2 mt-0.5">
+              <span>Analisis</span>
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <LiveClock />
           <div className="flex items-center gap-1.5 pl-2 border-l border-gray-300/40">
             <button
               onClick={handleExportCsv}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-gray-700 flex items-center gap-1.5 cursor-pointer transition shadow-sm"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-gray-700 flex items-center gap-1.5 cursor-pointer transition shadow-sm whitespace-nowrap"
               title="Ekspor CSV Analisis"
             >
               <Download size={13} className="text-sky-600" />
@@ -251,7 +251,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             </button>
             <button
               onClick={handleExportJson}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-purple-700 flex items-center gap-1.5 cursor-pointer transition shadow-sm"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-purple-700 flex items-center gap-1.5 cursor-pointer transition shadow-sm whitespace-nowrap"
               title="Ekspor JSON Analisis"
             >
               <Download size={13} className="text-purple-600" />
