@@ -10,12 +10,14 @@
   typedef ESP8266WebServer WebServerType;
 #endif
 #include "device_config.h"
+#include "config.h"
 
 extern DeviceConfig deviceConfig;
 extern WebServerType webServer;
 extern bool dhtOk;
 extern bool rtcOk;
 extern bool sdOk;
+extern SensorSample latestReading;
 
 // HTML page generator for ESP8266 Local Web Settings Portal
 inline String generateSettingsHtml(const DeviceConfig& cfg, const String& clientMsg = "") {
@@ -205,8 +207,33 @@ inline void setupWebServerRoutes() {
   webServer.on("/", HTTP_GET, []() {
     String json = F("{\"device\":\"Agrinex Weather Station\",\"status\":\"online\",\"protocol\":\"");
     json += protocolToString(deviceConfig.protocol);
-    json += F("\",\"settings_url\":\"/settings\",\"api_config\":\"/api/config\"}");
+    json += F("\",\"settings_url\":\"/settings\",\"api_config\":\"/api/config\",\"api_sensors\":\"/api/sensors\"}");
     webServer.send(200, "application/json", json);
+  });
+
+  // REST API GET: /api/sensors (Real-time local HTTP sensor stream)
+  webServer.on("/api/sensors", HTTP_GET, []() {
+    JsonDocument doc;
+    doc["temperature"] = (double)((int)(latestReading.temperature * 10)) / 10.0;
+    doc["humidity"]    = (double)((int)(latestReading.humidity * 10)) / 10.0;
+    doc["wind_speed"]  = (double)((int)(latestReading.windSpeed * 10)) / 10.0;
+    doc["light_lux"]   = (int)latestReading.lightLux;
+
+    doc["battery_voltage"]    = (double)((int)(latestReading.batteryVolts * 100)) / 100.0;
+    doc["battery_current"]    = (double)((int)(latestReading.batteryCurrent * 10)) / 10.0;
+    doc["battery_power"]      = (double)((int)(latestReading.batteryPower * 10)) / 10.0;
+    doc["battery_percentage"] = latestReading.batteryPct;
+
+    JsonObject bat = doc["battery"].to<JsonObject>();
+    bat["voltage"]    = (double)((int)(latestReading.batteryVolts * 100)) / 100.0;
+    bat["current_ma"] = (double)((int)(latestReading.batteryCurrent * 10)) / 10.0;
+    bat["power_mw"]   = (double)((int)(latestReading.batteryPower * 10)) / 10.0;
+    bat["percentage"] = latestReading.batteryPct;
+    bat["ok"]         = (latestReading.batteryVolts > 0.5f);
+
+    String resp;
+    serializeJson(doc, resp);
+    webServer.send(200, "application/json", resp);
   });
 
   // Settings Web Page GET

@@ -84,4 +84,17 @@
 #define WIND_SAMPLE_DURATION_MS 10000  // 10s wind sample
 #define ENABLE_DEEP_SLEEP       false  // Default continuous mode
 
+// ---------- Sensor Sample Structure ----------
+struct SensorSample {
+  float temperature;
+  float humidity;
+  float windSpeed;    // km/h
+  float lightLux;
+  float batteryVolts;
+  float batteryCurrent; // mA
+  float batteryPower;   // mW
+  int   batteryPct;
+  bool  valid;
+};
+
 #endif // CONFIG_H

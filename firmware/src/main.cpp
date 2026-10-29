@@ -48,6 +48,7 @@ WiFiClient mqttNetClient;
 PubSubClient mqttClient(mqttNetClient);
 INA226 ina(INA226_I2C_ADDR);
 bool inaOk = false;
+bool bh1750Ok = false;
 
 // ──────────── FreeRTOS Dual-Core Handles (ESP32) ────────────
 #if defined(ESP32)
@@ -86,18 +87,7 @@ bool sdOk  = false;
 volatile uint32_t anemoPulseCount = 0;
 volatile unsigned long anemoLastPulseUs = 0;
 
-// ──────────── Sensor Sample Structure ────────────
-struct SensorSample {
-  float temperature;
-  float humidity;
-  float windSpeed;    // km/h
-  float lightLux;
-  float batteryVolts;
-  float batteryCurrent; // mA
-  float batteryPower;   // mW
-  int   batteryPct;
-  bool  valid;
-};
+// ──────────── Sensor Ring Buffer (Defined in config.h) ────────────
 
 // Ring buffer untuk averaging
 SensorSample sampleBuffer[SAMPLE_BUFFER_SIZE];
@@ -193,6 +183,7 @@ void setup() {
   // --- 1. I2C Bus Init (Dinamis sesuai pin konfigurasi) ---
   Wire.begin(deviceConfig.pins.i2c_sda, deviceConfig.pins.i2c_scl);
   Wire.setClock(100000); // 100kHz standard I2C speed
+  delay(200); // Waktu stabilisasi sirkuit daya & pull-up I2C slave (persis local-project)
 
   Serial.printf("[I2C] Scanning I2C bus pada SDA(GPIO%d) / SCL(GPIO%d)...\n", 
                 deviceConfig.pins.i2c_sda, deviceConfig.pins.i2c_scl);
@@ -212,25 +203,20 @@ void setup() {
       if (address == 0x68) {
         rtcDetected = true;
       }
-      if (address == INA226_I2C_ADDR) {
+      if (address >= 0x40 && address <= 0x45) {
         inaDetected = true;
       }
     }
   }
 
   // --- Inisialisasi INA226 Battery & Power Monitor ---
-  if (inaDetected) {
-    ina = INA226(INA226_I2C_ADDR);
-    if (ina.begin()) {
-      inaOk = true;
-      ina.setMaxCurrentShunt(INA226_MAX_AMPS, INA226_SHUNT_OHM);
-      Serial.println(F("[INIT] INA226 Battery Monitor (I2C 0x40) ✓"));
-    } else {
-      Serial.println(F("[INIT] INA226 ✗ — begin() failed"));
-      inaOk = false;
-    }
+  ina = INA226(INA226_I2C_ADDR);
+  if (ina.begin()) {
+    inaOk = true;
+    ina.setMaxCurrentShunt(INA226_MAX_AMPS, INA226_SHUNT_OHM);
+    Serial.println(F("[INIT] INA226 Battery Monitor (I2C 0x40) ✓"));
   } else {
-    Serial.println(F("[INIT] INA226 tidak terdeteksi di I2C 0x40"));
+    Serial.println(F("[INIT] INA226 belum merespons di awal — akan auto-reconnect saat baca sensor"));
     inaOk = false;
   }
 
@@ -263,7 +249,6 @@ void setup() {
 
   // --- 3. Inisialisasi BH1750 (Kondisional Checkbox & Configurable I2C Addr) ---
   if (deviceConfig.modules.bh1750) {
-    bool bh1750Ok = false;
     uint8_t targetAddr = (deviceConfig.pins.bh1750_addr == 0x5C || deviceConfig.pins.bh1750_addr == 92) ? 0x5C : 0x23;
     if (bh1750Addr != 0) targetAddr = bh1750Addr; // Prioritize hardware scan if detected
 
@@ -482,18 +467,27 @@ void jobSensorRead() {
     dhtOk = true; // Jika DHT dinonaktifkan, data tetap valid untuk lux & angin
   }
 
-  // --- Baca BH1750 (Kondisional) ---
+  // --- Auto-reconnect & Baca BH1750 (Kondisional) ---
   float lux = 0.0f;
   if (deviceConfig.modules.bh1750) {
-    lux = lightMeter.readLightLevel();
-    if (lux < 0 || lux >= 54612.0f) {
-      delay(150);
-      yield();
-      lux = lightMeter.readLightLevel();
+    if (!bh1750Ok) {
+      if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x23) ||
+          lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x5C)) {
+        bh1750Ok = true;
+        Serial.println(F("[I2C] ✓ BH1750 auto-reconnected!"));
+      }
     }
-    if (lux < 0 || lux >= 54612.0f) {
-      Serial.println(F("[SENSOR] BH1750 error komunikasi — set lux=0"));
-      lux = 0.0f;
+    if (bh1750Ok) {
+      lux = lightMeter.readLightLevel();
+      if (lux < 0 || lux >= 54612.0f) {
+        delay(150);
+        yield();
+        lux = lightMeter.readLightLevel();
+      }
+      if (lux < 0 || lux >= 54612.0f) {
+        lux = 0.0f;
+        bh1750Ok = false; // Coba reconnect pada siklus berikutnya
+      }
     }
   }
 
@@ -520,18 +514,37 @@ void jobSensorRead() {
     lastAnemoCalcMs = nowMs;
   }
 
-  // --- Baca INA226 Battery & Power Monitor ---
+  // --- Auto-reconnect & Baca INA226 Battery & Power Monitor ---
+  if (!inaOk) {
+    Wire.beginTransmission(INA226_I2C_ADDR);
+    if (Wire.endTransmission() == 0) {
+      ina = INA226(INA226_I2C_ADDR);
+      if (ina.begin()) {
+        inaOk = true;
+        ina.setMaxCurrentShunt(INA226_MAX_AMPS, INA226_SHUNT_OHM);
+        Serial.println(F("[I2C] ✓ INA226 auto-reconnected!"));
+      }
+    }
+  }
+
   float batVolts = 0.0f;
   float batCurrent = 0.0f;
   float batPower = 0.0f;
   int batPct = 0;
   if (inaOk) {
     float vbus = ina.getBusVoltage();
+    float shuntMv = ina.getShuntVoltage_mV();
+    float cur = ina.getCurrent_mA();
+    if (abs(cur) < 0.1f && abs(shuntMv) > 0.005f) {
+      cur = shuntMv / INA226_SHUNT_OHM;
+    }
+    float pwr = abs(vbus * cur);
+
     if (!isnan(vbus) && vbus > 0.5f) {
       batVolts = vbus;
-      batCurrent = ina.getCurrent_mA();
-      batPower = ina.getPower_mW();
-      bool isSolarCharging = (vbus >= 3.45f || batCurrent < -10.0f);
+      batCurrent = cur;
+      batPower = pwr;
+      bool isSolarCharging = (vbus >= 3.45f || cur < -10.0f);
       batPct = calculateBatteryPercent(vbus, isSolarCharging);
     }
   }
