@@ -1,0 +1,106 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: telemetry
+// Document ID: Auto-generated document ID (push ID)
+// Description: Append-only IoT weather telemetry stream from Agrinex ESP8266 weather station.
+//
+// Required Fields:
+//   - timestamp: string (ISO 8601 format, non-empty, max 35 chars)
+//   - temperature: number (float or int, between -20 and 80 degrees Celsius)
+//   - humidity: number (float or int, between 0% and 100%)
+//   - wind_speed: number (float or int, between 0 and 150 km/h)
+//   - light_lux: number (float or int, between 0 and 200,000 Lux)
+//
+// Optional Fields:
+//   - createdAt: timestamp or string (ISO 8601 format, server ingestion timestamp)
+//   - raw_pulses: number (integer or float, pulse counter for anemometer, 0 to 100,000)
+//   - wifi_rssi: number (integer or float, RSSI signal in dBm, -150 to 50)
+//   - status: map (hardware health status flags: dht22, bh1750, anemometer, rtc_ds3231, sd_card)
+//
+// Security Constraints:
+//   - Create: Strictly validated against the above schema. Denies extra fields.
+//   - Update: Disallowed (false). Telemetry is an append-only audit/time-series log.
+//   - Delete: Disallowed (false). Telemetry records cannot be deleted.
+//   - Read: Allowed for public/dashboard queries.
+//   - Root: Default deny for all other collections.
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default Deny: Deny all reads and writes across any unconfigured collection
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions & Domain Validators
+    // ===============================================================
+
+    // Validates ISO 8601 formatted date-time string with length boundary protection
+    function isValidIsoTimestamp(str) {
+      return str is string &&
+             str.size() > 0 &&
+             str.size() <= 35 &&
+             str.matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$');
+    }
+
+    // Validates optional hardware sensor status map
+    function isValidStatusMap(statusMap) {
+      return statusMap is map &&
+             statusMap.keys().hasOnly(['dht22', 'bh1750', 'anemometer', 'rtc_ds3231', 'sd_card']) &&
+             (!('dht22' in statusMap) || statusMap.dht22 is bool) &&
+             (!('bh1750' in statusMap) || statusMap.bh1750 is bool) &&
+             (!('anemometer' in statusMap) || statusMap.anemometer is bool) &&
+             (!('rtc_ds3231' in statusMap) || statusMap.rtc_ds3231 is bool) &&
+             (!('sd_card' in statusMap) || statusMap.sd_card is bool);
+    }
+
+    // Domain Validator: Enforces strict data types, bounds, and schema integrity
+    function isValidTelemetry(data) {
+      return data.keys().hasAll(['timestamp', 'temperature', 'humidity', 'wind_speed', 'light_lux']) &&
+             data.keys().hasOnly([
+               'timestamp',
+               'temperature',
+               'humidity',
+               'wind_speed',
+               'light_lux',
+               'createdAt',
+               'raw_pulses',
+               'wifi_rssi',
+               'status'
+             ]) &&
+             // Required fields validation
+             isValidIsoTimestamp(data.timestamp) &&
+             data.temperature is number && data.temperature >= -20 && data.temperature <= 80 &&
+             data.humidity is number && data.humidity >= 0 && data.humidity <= 100 &&
+             data.wind_speed is number && data.wind_speed >= 0 && data.wind_speed <= 150 &&
+             data.light_lux is number && data.light_lux >= 0 && data.light_lux <= 200000 &&
+             // Optional fields validation
+             (!('createdAt' in data) || data.createdAt is timestamp || isValidIsoTimestamp(data.createdAt)) &&
+             (!('raw_pulses' in data) || (data.raw_pulses is number && data.raw_pulses >= 0 && data.raw_pulses <= 100000)) &&
+             (!('wifi_rssi' in data) || (data.wifi_rssi is number && data.wifi_rssi >= -150 && data.wifi_rssi <= 50)) &&
+             (!('status' in data) || isValidStatusMap(data.status));
+    }
+
+    // ===============================================================
+    // Telemetry Collection Rules
+    // ===============================================================
+    match /telemetry/{telemetryId} {
+      // Allow read for dashboard queries (real-time snapshots and history queries)
+      allow read: if true;
+
+      // Allow create only if incoming document passes strict schema validation
+      allow create: if isValidTelemetry(request.resource.data);
+
+      // Append-only immutable log: telemetry records cannot be modified or deleted
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

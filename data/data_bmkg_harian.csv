@@ -1,0 +1,5 @@
+id,tanggal,tmax_c,tmin_c,tmean_c,rh_persen,lama_penyinaran_jam,angin_ms,rs_mjm2hari,catatan
+1,2026-09-01,32.1,22.5,27.3,74.0,8.2,1.5,,
+2,2026-09-02,31.8,22.1,27.0,76.5,7.5,1.8,,
+3,2026-09-03,33.0,23.0,28.0,71.0,9.0,1.2,,
+4,2026-09-04,29.5,21.8,25.7,82.0,5.5,2.1,,Mendung sebagian

@@ -1,0 +1,26 @@
+# PlatformIO Build & Cache
+.pio/
+**/.pio/
+.vscode/
+**/.vscode/
+
+# Node.js & Web Build Artifacts
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+*.log
+**/*.log
+
+# Environment & Sensitive Credentials
+.env
+**/.env
+.env.local
+**/.env.local
+.env.*.local
+config.private.h
+**/config.private.h
+
+# OS Generated Files
+.DS_Store
+Thumbs.db

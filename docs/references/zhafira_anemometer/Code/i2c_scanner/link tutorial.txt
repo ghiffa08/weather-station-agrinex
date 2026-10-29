@@ -1,0 +1,3 @@
+Digunakan untuk mengetahui alamat i2c lcd
+
+https://www.nyebarilmu.com/cara-mencari-tahu-alamat-interface-i2c-module-arduino/

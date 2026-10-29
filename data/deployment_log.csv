@@ -1,0 +1,5 @@
+id,tanggal,jam,jenis_kejadian,durasi_menit,deskripsi,berdampak_pada
+1,2026-09-01,00:00,catatan,,Mulai jendela logging resmi setelah burn-in 2 hari,Semua sensor
+2,2026-09-02,13:45,restart,3,Node restart karena low battery -- panel surya tidak optimal saat mendung,"suhu_c, rh_persen, radiasi_lux"
+3,2026-09-03,14:30,anomali,,Nilai RH=102.3% terdeteksi -- sensor DHT22 terkena percikan air hujan,rh_persen
+4,2026-09-04,08:00,maintenance,15,Pembersihan lensa sensor radiasi dari debu & kotoran serangga,radiasi_lux

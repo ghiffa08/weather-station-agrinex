@@ -1,0 +1,8 @@
+#ifndef CONFIG_PRIVATE_H
+#define CONFIG_PRIVATE_H
+
+// Salin file ini menjadi config.private.h dan sesuaikan kredensial WiFi Anda
+#define WIFI_SSID         "NAMA_WIFI_ANDA"
+#define WIFI_PASSWORD     "PASSWORD_WIFI_ANDA"
+
+#endif // CONFIG_PRIVATE_H
