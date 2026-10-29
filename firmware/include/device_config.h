@@ -220,7 +220,7 @@ inline bool deserializeDeviceConfig(const String& jsonStr, DeviceConfig& cfg) {
     JsonObject t = doc["timing"];
     if (t["sensor_read_ms"].is<uint32_t>()) cfg.sensor_read_ms = t["sensor_read_ms"];
     if (t["publish_interval_ms"].is<uint32_t>()) cfg.publish_interval_ms = t["publish_interval_ms"];
-    if (t["enable_deep_sleep"].is<bool>()) cfg.enable_deep_sleep = t["enable_deep_sleep"];
+    cfg.enable_deep_sleep = false; // Always keep deep sleep OFF so local web server & WiFi stay active
   }
 
   return true;

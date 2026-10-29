@@ -310,11 +310,9 @@ void setup() {
     Serial.println(F("[CONFIG] Anemometer dinonaktifkan (Unchecked)."));
   }
 
-  // --- 7. Cabang Mode: Deep Sleep vs Continuous ---
-  if (deviceConfig.enable_deep_sleep || ENABLE_DEEP_SLEEP) {
-    runDeepSleepCycle();
-    return; // Kode di bawah tidak dieksekusi jika deep sleep aktif
-  }
+  // --- 7. Mode Operasi: Continuous 24/7 ---
+  // Deep sleep dinonaktifkan agar WiFi, Web Server port 80, dan Real-time Local HTTP streaming aktif 24/7 tanpa terputus
+  deviceConfig.enable_deep_sleep = false;
 
   // --- 8. Mode Non-Sleep: Hubungkan WiFi, NTP, & Start Web Config Portal ---
   connectWiFi();
@@ -472,22 +470,28 @@ void jobSensorRead() {
   float lux = 0.0f;
   if (deviceConfig.modules.bh1750) {
     if (!bh1750Ok) {
-      if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x23) ||
-          lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x5C)) {
-        bh1750Ok = true;
-        Serial.println(F("[I2C] ✓ BH1750 auto-reconnected!"));
+      Wire.beginTransmission(0x23);
+      if (Wire.endTransmission() == 0) {
+        if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x23)) {
+          bh1750Ok = true;
+          delay(180);
+          Serial.println(F("[I2C] ✓ BH1750 auto-reconnected pada 0x23!"));
+        }
+      } else {
+        Wire.beginTransmission(0x5C);
+        if (Wire.endTransmission() == 0) {
+          if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x5C)) {
+            bh1750Ok = true;
+            delay(180);
+            Serial.println(F("[I2C] ✓ BH1750 auto-reconnected pada 0x5C!"));
+          }
+        }
       }
     }
     if (bh1750Ok) {
-      lux = lightMeter.readLightLevel();
-      if (lux < 0 || lux >= 54612.0f) {
-        delay(150);
-        yield();
-        lux = lightMeter.readLightLevel();
-      }
-      if (lux < 0 || lux >= 54612.0f) {
-        lux = 0.0f;
-        bh1750Ok = false; // Coba reconnect pada siklus berikutnya
+      float readVal = lightMeter.readLightLevel();
+      if (readVal >= 0.0f && readVal < 120000.0f) {
+        lux = readVal;
       }
     }
   }
