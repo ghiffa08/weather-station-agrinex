@@ -76,7 +76,7 @@ export function useComparativeAnalytics({
     const iotTemps = todayLogs.length > 0 ? todayLogs.map((l) => l.temperature) : [fieldData.temperature];
     const iotHums = todayLogs.length > 0 ? todayLogs.map((l) => l.humidity) : [fieldData.humidity];
     const iotWinds = todayLogs.length > 0 ? todayLogs.map((l) => l.wind_speed) : [fieldData.wind_speed];
-    const iotLux = todayLogs.length > 0 ? todayLogs.map((l) => l.light_lux) : [fieldData.light_lux];
+    const iotLux = todayLogs.length > 0 ? todayLogs.map((l) => l.light_lux ?? 0) : [fieldData.light_lux ?? 0];
 
     const iotTmin = Math.min(...iotTemps);
     const iotTmax = Math.max(...iotTemps);

@@ -248,20 +248,22 @@ void setup() {
     rtcOk = false;
   }
 
-  // --- 3. Inisialisasi BH1750 (Kondisional Checkbox & Configurable I2C Addr) ---
+  // --- 3. Inisialisasi BH1750 (Sesuai local-project: begin langsung dengan fallback) ---
   if (deviceConfig.modules.bh1750) {
     uint8_t targetAddr = (deviceConfig.pins.bh1750_addr == 0x5C || deviceConfig.pins.bh1750_addr == 92) ? 0x5C : 0x23;
-    if (bh1750Addr != 0) targetAddr = bh1750Addr; // Prioritize hardware scan if detected
+    if (bh1750Addr != 0) targetAddr = bh1750Addr;
 
     bh1750Ok = lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, targetAddr);
     if (!bh1750Ok) {
       uint8_t altAddr = (targetAddr == 0x23) ? 0x5C : 0x23;
       bh1750Ok = lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, altAddr);
+      if (bh1750Ok) targetAddr = altAddr;
     }
+    deviceConfig.pins.bh1750_addr = targetAddr;
     if (bh1750Ok) {
       Serial.printf("[INIT] BH1750 Light Sensor ✓ (Addr: 0x%02X)\n", targetAddr);
     } else {
-      Serial.println(F("[INIT] BH1750 ✗ — periksa sambungan kabel SDA/SCL"));
+      Serial.println(F("[INIT] BH1750 Standby / Testing — akan auto-reconnect saat pembacaan sensor"));
     }
   } else {
     Serial.println(F("[CONFIG] BH1750 dinonaktifkan (Unchecked)."));
@@ -301,11 +303,11 @@ void setup() {
     Serial.println(F("[CONFIG] DHT22 dinonaktifkan (Unchecked)."));
   }
 
-  // --- 6. Anemometer (Kondisional Checkbox & Pin Dinamis) ---
+  // --- 6. Anemometer (Kondisional Checkbox & Pin Dinamis dengan Pulse-Width Filter) ---
   if (deviceConfig.modules.anemometer) {
     pinMode(deviceConfig.pins.anemo_pin, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(deviceConfig.pins.anemo_pin), anemoIsr, RISING);
-    Serial.printf("[INIT] Anemometer (Pin GPIO%d) ✓\n", deviceConfig.pins.anemo_pin);
+    attachInterrupt(digitalPinToInterrupt(deviceConfig.pins.anemo_pin), anemoIsr, FALLING);
+    Serial.printf("[INIT] Anemometer (Pin GPIO%d, Debounced & Falling Filtered) ✓\n", deviceConfig.pins.anemo_pin);
   } else {
     Serial.println(F("[CONFIG] Anemometer dinonaktifkan (Unchecked)."));
   }
@@ -414,9 +416,13 @@ void loop() {
 // ================================================================
 IRAM_ATTR void anemoIsr() {
   unsigned long now = micros();
-  if (now - anemoLastPulseUs >= ANEMOMETER_DEBOUNCE_US) {
-    anemoPulseCount++;
-    anemoLastPulseUs = now;
+  // 15ms debounce filter (~66 Hz max, mencakup kecepatan angin hingga > 200 km/h)
+  if (now - anemoLastPulseUs >= 15000) {
+    // Validasi level pin untuk eliminasi glitch RF / noise transient microsecond
+    if (digitalRead(deviceConfig.pins.anemo_pin) == LOW) {
+      anemoPulseCount++;
+      anemoLastPulseUs = now;
+    }
   }
 }
 
@@ -432,6 +438,10 @@ bool readDhtSensor(float &temp, float &hum) {
   hum  = dht->readHumidity(false);
 
   if (!isnan(temp) && !isnan(hum) && temp > -20.0f && temp < 80.0f && hum >= 0.0f && hum <= 100.0f) {
+    temp += deviceConfig.dht_temp_offset;
+    hum  += deviceConfig.dht_hum_offset;
+    if (hum > 100.0f) hum = 100.0f;
+    if (hum < 0.0f) hum = 0.0f;
     return true;
   }
 
@@ -441,6 +451,10 @@ bool readDhtSensor(float &temp, float &hum) {
     temp = dht->readTemperature(false, true);
     hum  = dht->readHumidity(true);
     if (!isnan(temp) && !isnan(hum) && temp > -20.0f && temp < 80.0f && hum >= 0.0f && hum <= 100.0f) {
+      temp += deviceConfig.dht_temp_offset;
+      hum  += deviceConfig.dht_hum_offset;
+      if (hum > 100.0f) hum = 100.0f;
+      if (hum < 0.0f) hum = 0.0f;
       return true;
     }
   }
@@ -496,27 +510,25 @@ void jobSensorRead() {
     }
   }
 
-  // --- Hitung kecepatan angin (Kondisional) ---
+  // --- Hitung kecepatan angin (Sesuai local-project: Linear & Zero saat Diam) ---
   float windKmh = 0.0f;
   if (deviceConfig.modules.anemometer) {
     unsigned long nowMs = millis();
     float elapsedSec = (nowMs - lastAnemoCalcMs) / 1000.0f;
+    if (elapsedSec <= 0.0f) elapsedSec = 1.0f;
 
     noInterrupts();
     uint32_t currentPulses = anemoPulseCount;
     interrupts();
 
     uint32_t pulsesDelta = (currentPulses >= lastAnemoCount) ? (currentPulses - lastAnemoCount) : currentPulses;
-    float rotasiPerDetik = (elapsedSec > 0) ? (float)pulsesDelta / elapsedSec : 0.0f;
+    float pulsesPerSec = pulsesDelta / elapsedSec;
 
-    // Zhafira Anemometer 1.3 Formula with low-speed linear response
+    // Sesuai local-project: jika anemometer diam / tidak diputar, kecepatan angin = 0.0
+    // Filter noise lantai induksi (> 60 Hz) agar tidak gerak sendiri
     float mPerSec = 0.0f;
-    if (pulsesDelta > 0 && rotasiPerDetik > 0.0f) {
-      mPerSec = (-0.0181f * rotasiPerDetik * rotasiPerDetik) +
-                (1.3859f * rotasiPerDetik) + 1.4055f;
-      if (mPerSec <= 0.0f) {
-        mPerSec = (rotasiPerDetik * 0.0875f) + 0.1f;
-      }
+    if (pulsesDelta >= 1 && pulsesPerSec >= 0.5f && pulsesPerSec <= 60.0f) {
+      mPerSec = (pulsesPerSec * 0.0875f) + 0.1f;
     }
     windKmh = mPerSec * 3.6f;
 

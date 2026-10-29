@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useWeatherRealtime } from '../../hooks/useWeatherRealtime';
+import { useWeatherRealtime, loadSensorCalibration } from '../../hooks/useWeatherRealtime';
 import { useBmkgComparison } from '../../hooks/useBmkgComparison';
 import { useComparativeAnalytics } from '../../hooks/useComparativeAnalytics';
 import { weatherRepository } from '../../core/di';
@@ -95,7 +95,18 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
   useEffect(() => {
     weatherRepository.getHistory(50).then((history) => {
       if (history && history.length > 0) {
-        const formattedLogs: TelemetryLogEntry[] = history.map((item, idx) => {
+        const cal = loadSensorCalibration();
+        const calibratedHistory = history.map((item) => {
+          if (!cal.enabled) return item;
+          // Apply calibration offset if raw uncalibrated DHT22 reading
+          const isUncalibrated = item.temperature > 25.0;
+          return {
+            ...item,
+            temperature: isUncalibrated ? Number((item.temperature + cal.tempOffset).toFixed(1)) : item.temperature,
+            humidity: isUncalibrated ? Number(Math.min(100, Math.max(0, item.humidity + cal.humOffset)).toFixed(1)) : item.humidity,
+          };
+        });
+        const formattedLogs: TelemetryLogEntry[] = calibratedHistory.map((item, idx) => {
           const dt = item.timestamp ? new Date(item.timestamp) : new Date();
           const displayTime = isNaN(dt.getTime())
             ? (item.timestamp || 'N/A')
@@ -107,7 +118,7 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
           };
         });
         setTelemetryLogs(formattedLogs);
-        onLogsLoaded?.(history);
+        onLogsLoaded?.(calibratedHistory);
       }
     }).catch(err => console.warn('[Dashboard] History load notice:', err));
   }, [onLogsLoaded]);

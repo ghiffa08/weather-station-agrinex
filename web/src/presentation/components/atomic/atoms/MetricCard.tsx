@@ -19,6 +19,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   subtitle,
   isAvailable = true,
 }) => {
+  const hasValue = isAvailable !== false && value !== undefined && !Number.isNaN(value);
+
   return (
     <Card className="flex items-center justify-between p-3.5 sm:p-4 hover:shadow-[var(--shadow-neo-pressed)] cursor-default transition-all duration-300">
       <div className="flex items-center gap-3">
@@ -26,13 +28,20 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           {icon}
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-neo-text-muted)]">
-            {title}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-neo-text-muted)]">
+              {title}
+            </p>
+            {!hasValue && (
+              <span className="px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-amber-100/80">
+                Standby / Testing
+              </span>
+            )}
+          </div>
           {subtitle && <p className="text-[9px] text-gray-400">{subtitle}</p>}
           <div className="flex items-baseline gap-1 mt-0.5">
             <span className="text-lg sm:text-2xl font-extrabold text-gray-800 tabular-nums">
-              {!isAvailable ? 'ERR' : value !== undefined ? value.toFixed(1) : '--'}
+              {hasValue ? value.toFixed(1) : '--'}
             </span>
             <span className="text-[10px] sm:text-xs font-semibold text-gray-500">{unit}</span>
           </div>

@@ -97,8 +97,8 @@ export const HighlightsGrid: React.FC<HighlightsGridProps> = ({
           value={fieldData?.light_lux}
           unit="lux"
           icon={<Sun size={20} />}
-          subtitle="LDR / BH1750"
-          isAvailable={fieldData?.status?.bh1750 ?? true}
+          subtitle="BH1750 Sensor (0x23)"
+          isAvailable={fieldData?.status?.bh1750 ?? (fieldData?.light_lux !== undefined && fieldData.light_lux > 0)}
         />
       </div>
     </section>

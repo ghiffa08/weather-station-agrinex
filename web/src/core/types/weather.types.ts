@@ -22,7 +22,7 @@ export interface WeatherTelemetry {
   temperature: number;
   humidity: number;
   wind_speed: number;
-  light_lux: number;
+  light_lux?: number;
   raw_pulses?: number;
   wifi_rssi?: number;
   free_heap?: number;

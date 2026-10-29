@@ -220,10 +220,29 @@ inline void setupWebServerRoutes() {
     webServer.sendHeader("Connection", "close");
 
     JsonDocument doc;
-    doc["temperature"] = (double)((int)(latestReading.temperature * 10)) / 10.0;
-    doc["humidity"]    = (double)((int)(latestReading.humidity * 10)) / 10.0;
-    doc["wind_speed"]  = (double)((int)(latestReading.windSpeed * 10)) / 10.0;
-    doc["light_lux"]   = (int)latestReading.lightLux;
+    doc["fw_v"]        = 2;
+    doc["calibrated"]  = true;
+
+    if (dhtOk) {
+      doc["temperature"] = (double)((int)(latestReading.temperature * 10)) / 10.0;
+      doc["humidity"]    = (double)((int)(latestReading.humidity * 10)) / 10.0;
+    } else {
+      doc["temperature"] = nullptr;
+      doc["humidity"]    = nullptr;
+    }
+
+    if (deviceConfig.modules.anemometer) {
+      doc["wind_speed"]  = (latestReading.windSpeed > 0.0f) ? ((double)((int)(latestReading.windSpeed * 10)) / 10.0) : 0.0;
+    } else {
+      doc["wind_speed"]  = nullptr;
+    }
+
+    if (bh1750Ok) {
+      doc["light_lux"]   = (int)latestReading.lightLux;
+    } else {
+      doc["light_lux"]   = nullptr;
+    }
+
     doc["raw_pulses"]  = (uint32_t)anemoPulseCount;
     doc["wifi_rssi"]   = WiFi.RSSI();
     doc["uptime_sec"]  = millis() / 1000;
@@ -313,7 +332,11 @@ inline void setupWebServerRoutes() {
     mBh["bus"] = "I2C (SDA 21, SCL 22)";
     mBh["address"] = bhFound ? "0x23 / 0x5C" : "0x23";
     mBh["connected"] = (bh1750Ok || bhFound);
-    mBh["light_lux"] = (int)latestReading.lightLux;
+    if (bh1750Ok || bhFound) {
+      mBh["light_lux"] = (int)latestReading.lightLux;
+    } else {
+      mBh["light_lux"] = nullptr;
+    }
     mBh["message"] = (bh1750Ok || bhFound) ? "BH1750 terdeteksi pada bus I2C" : "BH1750 tidak merespon pada I2C 0x23 / 0x5C. Periksa kabel SDA/SCL.";
 
     // Anemometer

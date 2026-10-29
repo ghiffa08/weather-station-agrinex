@@ -19,7 +19,13 @@ import {
 import { Card } from '../components/neumorphic/Card';
 import { StatusBadge } from '../components/neumorphic/StatusBadge';
 import { ModuleDiagnosticsModal } from '../components/neumorphic/ModuleDiagnosticsModal';
-import { useWeatherRealtime } from '../../hooks/useWeatherRealtime';
+import { 
+  useWeatherRealtime,
+  loadSensorCalibration,
+  CALIBRATION_STORAGE_KEY,
+  DEFAULT_SENSOR_CALIBRATION,
+  type SensorCalibrationConfig
+} from '../../hooks/useWeatherRealtime';
 import { 
   DEFAULT_DEVICE_CONFIG,
   ESP32_DEFAULT_PINS,
@@ -62,10 +68,19 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
     return 'modules';
   });
   const [config, setConfig] = useState<DeviceConfiguration>(DEFAULT_DEVICE_CONFIG);
-  const [deviceIp, setDeviceIp] = useState<string>('192.168.4.1');
+  const [deviceIp, setDeviceIp] = useState<string>('192.168.18.3');
   const [isPushing, setIsPushing] = useState<boolean>(false);
   const [pushStatus, setPushStatus] = useState<{ success?: boolean; message?: string } | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [calibration, setCalibration] = useState<SensorCalibrationConfig>(() => loadSensorCalibration());
+
+  const updateCalibration = (next: Partial<SensorCalibrationConfig>) => {
+    setCalibration(prev => {
+      const updated = { ...prev, ...next };
+      localStorage.setItem(CALIBRATION_STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   // Real-time stream mode & diagnostics state
   const { 
@@ -410,6 +425,103 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
                 <span>Cek Modul</span>
               </button>
             </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* SENSOR CALIBRATION CARD (DHT22 & ANEMOMETER NOISE GATE) */}
+      <Card className="p-4 sm:p-5 space-y-4 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-300/40 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <CheckCircle size={16} className="text-emerald-600" />
+              <h2 className="text-sm font-bold text-gray-800">Kalibrasi Sensor DHT22 &amp; Filter Anemometer</h2>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Kompensasi termal PCB untuk akurasi DHT22 terhadap referensi BMKG serta filter interferensi pulsa anemometer saat diam
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => updateCalibration(DEFAULT_SENSOR_CALIBRATION)}
+              className="px-3 py-1.5 rounded-xl neo-pressed hover:bg-gray-200/60 text-[11px] font-bold text-gray-600 cursor-pointer transition"
+            >
+              Reset Default (-4.8°C / +14%)
+            </button>
+            <button
+              type="button"
+              onClick={() => updateCalibration({ enabled: !calibration.enabled })}
+              className={`px-3 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer transition ${
+                calibration.enabled
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'neo-pressed text-gray-500'
+              }`}
+            >
+              {calibration.enabled ? 'Kalibrasi Aktif' : 'Kalibrasi Nonaktif'}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-gray-700 block">
+              Offset Suhu DHT22 (°C)
+            </label>
+            <div className="flex items-center gap-2 neo-pressed px-3 py-2 rounded-xl">
+              <input
+                type="number"
+                step="0.1"
+                value={calibration.tempOffset}
+                onChange={(e) => updateCalibration({ tempOffset: parseFloat(e.target.value) || 0 })}
+                className="bg-transparent text-xs font-mono font-bold text-gray-800 focus:outline-none w-full"
+              />
+              <span className="text-xs font-bold text-gray-500">°C</span>
+            </div>
+            <p className="text-[10px] text-gray-500">
+              Terbaca: <strong>{realtimeData?.temperature?.toFixed(1) ?? '--'}°C</strong>
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-gray-700 block">
+              Offset Kelembapan DHT22 (%)
+            </label>
+            <div className="flex items-center gap-2 neo-pressed px-3 py-2 rounded-xl">
+              <input
+                type="number"
+                step="0.5"
+                value={calibration.humOffset}
+                onChange={(e) => updateCalibration({ humOffset: parseFloat(e.target.value) || 0 })}
+                className="bg-transparent text-xs font-mono font-bold text-gray-800 focus:outline-none w-full"
+              />
+              <span className="text-xs font-bold text-gray-500">%</span>
+            </div>
+            <p className="text-[10px] text-gray-500">
+              Terbaca: <strong>{realtimeData?.humidity?.toFixed(1) ?? '--'}%</strong>
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-gray-700 block">
+              Noise Gate Anemometer (Pulsa/s)
+            </label>
+            <div className="flex items-center gap-2 neo-pressed px-3 py-2 rounded-xl">
+              <input
+                type="number"
+                step="1"
+                min="0"
+                max="50"
+                value={calibration.windNoiseGate}
+                onChange={(e) => updateCalibration({ windNoiseGate: parseInt(e.target.value, 10) || 0 })}
+                className="bg-transparent text-xs font-mono font-bold text-gray-800 focus:outline-none w-full"
+              />
+              <span className="text-xs font-bold text-gray-500">Hz</span>
+            </div>
+            <p className="text-[10px] text-gray-500">
+              Angin: <strong>{realtimeData?.wind_speed?.toFixed(1) ?? '0.0'} km/h</strong>
+            </p>
           </div>
         </div>
       </Card>

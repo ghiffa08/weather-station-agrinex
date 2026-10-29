@@ -77,9 +77,13 @@ struct DeviceConfig {
   MqttConfig mqtt;
   HttpRestConfig http_rest;
 
-  uint32_t sensor_read_ms = 2000;
+  uint32_t sensor_read_ms = 1000;
   uint32_t publish_interval_ms = 900000;
   bool enable_deep_sleep = false;
+
+  // Kalibrasi DHT22 (Kompensasi termal PCB terhadap referensi BMKG)
+  float dht_temp_offset = -4.8f;
+  float dht_hum_offset  = 14.0f;
 };
 
 inline const char* protocolToString(BackendProtocol proto) {
@@ -218,9 +222,14 @@ inline bool deserializeDeviceConfig(const String& jsonStr, DeviceConfig& cfg) {
 
   if (doc["timing"].is<JsonObject>()) {
     JsonObject t = doc["timing"];
-    if (t["sensor_read_ms"].is<uint32_t>()) cfg.sensor_read_ms = t["sensor_read_ms"];
     if (t["publish_interval_ms"].is<uint32_t>()) cfg.publish_interval_ms = t["publish_interval_ms"];
+    cfg.sensor_read_ms = 1000;    // Always 1s for real-time sensor polling
     cfg.enable_deep_sleep = false; // Always keep deep sleep OFF so local web server & WiFi stay active
+  }
+  if (doc["calibration"].is<JsonObject>()) {
+    JsonObject c = doc["calibration"];
+    if (c["dht_temp_offset"].is<float>()) cfg.dht_temp_offset = c["dht_temp_offset"];
+    if (c["dht_hum_offset"].is<float>()) cfg.dht_hum_offset = c["dht_hum_offset"];
   }
 
   return true;
