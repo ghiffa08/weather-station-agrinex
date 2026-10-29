@@ -53,9 +53,10 @@ service cloud.firestore {
     // Validates optional hardware sensor status map
     function isValidStatusMap(statusMap) {
       return statusMap is map &&
-             statusMap.keys().hasOnly(['dht22', 'bh1750', 'anemometer', 'rtc_ds3231', 'sd_card']) &&
+             statusMap.keys().hasOnly(['dht22', 'bh1750', 'ina226', 'anemometer', 'rtc_ds3231', 'sd_card']) &&
              (!('dht22' in statusMap) || statusMap.dht22 is bool) &&
              (!('bh1750' in statusMap) || statusMap.bh1750 is bool) &&
+             (!('ina226' in statusMap) || statusMap.ina226 is bool) &&
              (!('anemometer' in statusMap) || statusMap.anemometer is bool) &&
              (!('rtc_ds3231' in statusMap) || statusMap.rtc_ds3231 is bool) &&
              (!('sd_card' in statusMap) || statusMap.sd_card is bool);
@@ -70,6 +71,11 @@ service cloud.firestore {
                'humidity',
                'wind_speed',
                'light_lux',
+               'battery_voltage',
+               'battery_percentage',
+               'battery_current',
+               'battery_power',
+               'battery',
                'createdAt',
                'raw_pulses',
                'wifi_rssi',
@@ -81,7 +87,12 @@ service cloud.firestore {
              data.humidity is number && data.humidity >= 0 && data.humidity <= 100 &&
              data.wind_speed is number && data.wind_speed >= 0 && data.wind_speed <= 150 &&
              data.light_lux is number && data.light_lux >= 0 && data.light_lux <= 200000 &&
-             // Optional fields validation
+             // Optional battery fields validation
+             (!('battery_voltage' in data) || (data.battery_voltage is number && data.battery_voltage >= 0 && data.battery_voltage <= 30)) &&
+             (!('battery_percentage' in data) || (data.battery_percentage is number && data.battery_percentage >= 0 && data.battery_percentage <= 100)) &&
+             (!('battery_current' in data) || (data.battery_current is number && data.battery_current >= -5000 && data.battery_current <= 5000)) &&
+             (!('battery_power' in data) || (data.battery_power is number && data.battery_power >= 0 && data.battery_power <= 50000)) &&
+             // Optional metadata fields validation
              (!('createdAt' in data) || data.createdAt is timestamp || isValidIsoTimestamp(data.createdAt)) &&
              (!('raw_pulses' in data) || (data.raw_pulses is number && data.raw_pulses >= 0 && data.raw_pulses <= 100000)) &&
              (!('wifi_rssi' in data) || (data.wifi_rssi is number && data.wifi_rssi >= -150 && data.wifi_rssi <= 50)) &&

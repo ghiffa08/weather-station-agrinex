@@ -93,6 +93,8 @@ struct SensorSample {
   float windSpeed;    // km/h
   float lightLux;
   float batteryVolts;
+  float batteryCurrent; // mA
+  float batteryPower;   // mW
   int   batteryPct;
   bool  valid;
 };
@@ -103,7 +105,7 @@ int sampleWriteIdx = 0;
 int sampleCount = 0;
 
 // Latest single reading (for serial debug & fallback)
-SensorSample latestReading = {0, 0, 0, 0, 0, 0, false};
+SensorSample latestReading = {0, 0, 0, 0, 0, 0, 0, 0, false};
 
 // ──────────── Scheduler Timestamps ────────────
 unsigned long lastSensorReadMs  = 0;
@@ -126,12 +128,18 @@ void jobSensorRead();
 void jobFirebasePublish();
 void processOfflineQueue();
 void jobWatchdog();
-bool publishTelemetry(const String& isoTime, float temp, float hum, float wind, float lux);
-bool postToFirestoreDirect(const String& isoTime, float temp, float hum, float wind, float lux);
-bool postToSupabaseDirect(const String& isoTime, float temp, float hum, float wind, float lux);
-bool postToMqtt(const String& isoTime, float temp, float hum, float wind, float lux);
-bool postToRestDirect(const String& isoTime, float temp, float hum, float wind, float lux);
-void postToWebIngress(const String& isoTime, float temp, float hum, float wind, float lux);
+bool publishTelemetry(const String& isoTime, float temp, float hum, float wind, float lux,
+                      float batVolts = 0.0f, int batPct = 0, float batCur = 0.0f, float batPwr = 0.0f);
+bool postToFirestoreDirect(const String& isoTime, float temp, float hum, float wind, float lux,
+                           float batVolts = 0.0f, int batPct = 0, float batCur = 0.0f, float batPwr = 0.0f);
+bool postToSupabaseDirect(const String& isoTime, float temp, float hum, float wind, float lux,
+                          float batVolts = 0.0f, int batPct = 0, float batCur = 0.0f, float batPwr = 0.0f);
+bool postToMqtt(const String& isoTime, float temp, float hum, float wind, float lux,
+                float batVolts = 0.0f, int batPct = 0, float batCur = 0.0f, float batPwr = 0.0f);
+bool postToRestDirect(const String& isoTime, float temp, float hum, float wind, float lux,
+                      float batVolts = 0.0f, int batPct = 0, float batCur = 0.0f, float batPwr = 0.0f);
+void postToWebIngress(const String& isoTime, float temp, float hum, float wind, float lux,
+                     float batVolts = 0.0f, int batPct = 0, float batCur = 0.0f, float batPwr = 0.0f);
 bool logToSdCard(const String& isoTime, float temp, float hum, float wind, float lux, const char* status);
 void runDeepSleepCycle();
 
@@ -514,25 +522,31 @@ void jobSensorRead() {
 
   // --- Baca INA226 Battery & Power Monitor ---
   float batVolts = 0.0f;
+  float batCurrent = 0.0f;
+  float batPower = 0.0f;
   int batPct = 0;
   if (inaOk) {
     float vbus = ina.getBusVoltage();
     if (!isnan(vbus) && vbus > 0.5f) {
       batVolts = vbus;
-      bool isSolarCharging = (vbus >= 3.45f);
+      batCurrent = ina.getCurrent_mA();
+      batPower = ina.getPower_mW();
+      bool isSolarCharging = (vbus >= 3.45f || batCurrent < -10.0f);
       batPct = calculateBatteryPercent(vbus, isSolarCharging);
     }
   }
 
   // --- Simpan ke ring buffer ---
   SensorSample sample;
-  sample.temperature  = dhtOk ? temp : 0.0f;
-  sample.humidity     = dhtOk ? hum : 0.0f;
-  sample.windSpeed    = windKmh;
-  sample.lightLux     = lux;
-  sample.batteryVolts = batVolts;
-  sample.batteryPct   = batPct;
-  sample.valid        = dhtOk;
+  sample.temperature    = dhtOk ? temp : 0.0f;
+  sample.humidity       = dhtOk ? hum : 0.0f;
+  sample.windSpeed      = windKmh;
+  sample.lightLux       = lux;
+  sample.batteryVolts   = batVolts;
+  sample.batteryCurrent = batCurrent;
+  sample.batteryPower   = batPower;
+  sample.batteryPct     = batPct;
+  sample.valid          = dhtOk;
 
 #if defined(ESP32)
   if (sensorMutex) xSemaphoreTake(sensorMutex, portMAX_DELAY);
@@ -578,7 +592,8 @@ void networkTask(void* pvParameters) {
 #endif
 
 // ──────────── 1. Backend Ingestion: Firebase Firestore ────────────
-bool postToFirestoreDirect(const String& isoTime, float temp, float hum, float wind, float lux) {
+bool postToFirestoreDirect(const String& isoTime, float temp, float hum, float wind, float lux,
+                           float batVolts, int batPct, float curMa, float pwrMw) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
   WiFiClientSecure client;
@@ -606,6 +621,20 @@ bool postToFirestoreDirect(const String& isoTime, float temp, float hum, float w
     fields["light_lux"]["integerValue"] = (int)lux;
     fields["createdAt"]["timestampValue"] = isoTime;
 
+    if (batVolts > 0.1f) {
+      fields["battery_voltage"]["doubleValue"] = (double)((int)(batVolts * 100)) / 100.0;
+      fields["battery_percentage"]["integerValue"] = batPct;
+      fields["battery_current"]["doubleValue"] = (double)((int)(curMa * 10)) / 10.0;
+      fields["battery_power"]["doubleValue"] = (double)((int)(pwrMw * 10)) / 10.0;
+    }
+
+    JsonObject statusMap = fields["status"]["mapValue"]["fields"].to<JsonObject>();
+    statusMap["dht22"]["booleanValue"] = true;
+    statusMap["bh1750"]["booleanValue"] = (lux > 0.0f || deviceConfig.modules.bh1750);
+    statusMap["ina226"]["booleanValue"] = (batVolts > 0.1f || inaOk);
+    statusMap["anemometer"]["booleanValue"] = deviceConfig.modules.anemometer;
+    statusMap["rtc_ds3231"]["booleanValue"] = rtcOk;
+
     String jsonBody;
     serializeJson(doc, jsonBody);
 
@@ -628,7 +657,8 @@ bool postToFirestoreDirect(const String& isoTime, float temp, float hum, float w
 }
 
 // ──────────── 2. Backend Ingestion: Supabase Database (PostgREST) ────────────
-bool postToSupabaseDirect(const String& isoTime, float temp, float hum, float wind, float lux) {
+bool postToSupabaseDirect(const String& isoTime, float temp, float hum, float wind, float lux,
+                          float batVolts, int batPct, float curMa, float pwrMw) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
   WiFiClientSecure client;
@@ -676,7 +706,8 @@ bool postToSupabaseDirect(const String& isoTime, float temp, float hum, float wi
 }
 
 // ──────────── 3. Backend Ingestion: MQTT Broker ────────────
-bool postToMqtt(const String& isoTime, float temp, float hum, float wind, float lux) {
+bool postToMqtt(const String& isoTime, float temp, float hum, float wind, float lux,
+                float batVolts, int batPct, float batCur, float batPwr) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
   if (!mqttClient.connected()) {
@@ -699,6 +730,12 @@ bool postToMqtt(const String& isoTime, float temp, float hum, float wind, float 
   doc["humidity"]    = (double)((int)(hum * 10)) / 10.0;
   doc["wind_speed"]  = (double)((int)(wind * 10)) / 10.0;
   doc["light_lux"]   = (int)lux;
+  if (batVolts > 0.1f) {
+    doc["battery_voltage"] = (double)((int)(batVolts * 100)) / 100.0;
+    doc["battery_percentage"] = batPct;
+    doc["battery_current"] = (double)((int)(batCur * 10)) / 10.0;
+    doc["battery_power"] = (double)((int)(batPwr * 10)) / 10.0;
+  }
 
   String body;
   serializeJson(doc, body);
@@ -717,7 +754,8 @@ bool postToMqtt(const String& isoTime, float temp, float hum, float wind, float 
 }
 
 // ──────────── 4. Backend Ingestion: Custom HTTPS REST Webhook ────────────
-bool postToRestDirect(const String& isoTime, float temp, float hum, float wind, float lux) {
+bool postToRestDirect(const String& isoTime, float temp, float hum, float wind, float lux,
+                      float batVolts, int batPct, float batCur, float batPwr) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
   WiFiClientSecure client;
@@ -741,6 +779,12 @@ bool postToRestDirect(const String& isoTime, float temp, float hum, float wind, 
     doc["humidity"]    = (double)((int)(hum * 10)) / 10.0;
     doc["wind_speed"]  = (double)((int)(wind * 10)) / 10.0;
     doc["light_lux"]   = (int)lux;
+    if (batVolts > 0.1f) {
+      doc["battery_voltage"] = (double)((int)(batVolts * 100)) / 100.0;
+      doc["battery_percentage"] = batPct;
+      doc["battery_current"] = (double)((int)(batCur * 10)) / 10.0;
+      doc["battery_power"] = (double)((int)(batPwr * 10)) / 10.0;
+    }
 
     String body;
     serializeJson(doc, body);
@@ -763,22 +807,24 @@ bool postToRestDirect(const String& isoTime, float temp, float hum, float wind, 
 }
 
 // ──────────── Multi-Protocol Dispatcher (Tanpa Hardcode) ────────────
-bool publishTelemetry(const String& isoTime, float temp, float hum, float wind, float lux) {
+bool publishTelemetry(const String& isoTime, float temp, float hum, float wind, float lux,
+                      float batVolts, int batPct, float batCur, float batPwr) {
   switch (deviceConfig.protocol) {
     case BackendProtocol::SUPABASE:
-      return postToSupabaseDirect(isoTime, temp, hum, wind, lux);
+      return postToSupabaseDirect(isoTime, temp, hum, wind, lux, batVolts, batPct, batCur, batPwr);
     case BackendProtocol::MQTT:
-      return postToMqtt(isoTime, temp, hum, wind, lux);
+      return postToMqtt(isoTime, temp, hum, wind, lux, batVolts, batPct, batCur, batPwr);
     case BackendProtocol::HTTP_REST:
-      return postToRestDirect(isoTime, temp, hum, wind, lux);
+      return postToRestDirect(isoTime, temp, hum, wind, lux, batVolts, batPct, batCur, batPwr);
     case BackendProtocol::FIREBASE:
     default:
-      return postToFirestoreDirect(isoTime, temp, hum, wind, lux);
+      return postToFirestoreDirect(isoTime, temp, hum, wind, lux, batVolts, batPct, batCur, batPwr);
   }
 }
 
 // Function: Direct HTTPS POST to Vercel Web Ingestion Endpoint (Backup)
-void postToWebIngress(const String& isoTime, float temp, float hum, float wind, float lux) {
+void postToWebIngress(const String& isoTime, float temp, float hum, float wind, float lux,
+                     float batVolts, int batPct, float batCur, float batPwr) {
   if (WiFi.status() != WL_CONNECTED) return;
 
   WiFiClientSecure client;
@@ -801,6 +847,12 @@ void postToWebIngress(const String& isoTime, float temp, float hum, float wind, 
     doc["humidity"]    = (double)((int)(hum * 10)) / 10.0;
     doc["wind_speed"]  = (double)((int)(wind * 10)) / 10.0;
     doc["light_lux"]   = (int)lux;
+    if (batVolts > 0.1f) {
+      doc["battery_voltage"] = (double)((int)(batVolts * 100)) / 100.0;
+      doc["battery_percentage"] = batPct;
+      doc["battery_current"] = (double)((int)(batCur * 10)) / 10.0;
+      doc["battery_power"] = (double)((int)(batPwr * 10)) / 10.0;
+    }
 
     String jsonBody;
     serializeJson(doc, jsonBody);
@@ -834,6 +886,8 @@ void jobFirebasePublish() {
   // --- Hitung rata-rata dari buffer (Thread-safe) ---
   if (sampleCount > 0) {
     float avgTemp = 0, avgHum = 0, avgWind = 0, avgLux = 0;
+    float avgBatVolts = 0, avgBatCur = 0, avgBatPwr = 0;
+    int avgBatPct = 0;
     int validCount = 0;
 
 #if defined(ESP32)
@@ -845,6 +899,10 @@ void jobFirebasePublish() {
         avgHum  += sampleBuffer[i].humidity;
         avgWind += sampleBuffer[i].windSpeed;
         avgLux  += sampleBuffer[i].lightLux;
+        avgBatVolts += sampleBuffer[i].batteryVolts;
+        avgBatCur   += sampleBuffer[i].batteryCurrent;
+        avgBatPwr   += sampleBuffer[i].batteryPower;
+        avgBatPct   += sampleBuffer[i].batteryPct;
         validCount++;
       }
     }
@@ -860,15 +918,26 @@ void jobFirebasePublish() {
       avgHum  /= validCount;
       avgWind /= validCount;
       avgLux  /= validCount;
+      avgBatVolts /= validCount;
+      avgBatCur   /= validCount;
+      avgBatPwr   /= validCount;
+      avgBatPct   /= validCount;
     } else {
       avgTemp = latestReading.temperature;
       avgHum  = latestReading.humidity;
       avgWind = latestReading.windSpeed;
       avgLux  = latestReading.lightLux;
+      avgBatVolts = latestReading.batteryVolts;
+      avgBatCur   = latestReading.batteryCurrent;
+      avgBatPwr   = latestReading.batteryPower;
+      avgBatPct   = latestReading.batteryPct;
     }
 
-    // Simpan ke Flash dengan format CSV
-    String queueLine = isoTime + "," + String(avgTemp, 1) + "," + String(avgHum, 1) + "," + String(avgWind, 1) + "," + String(avgLux, 0);
+    // Simpan ke Flash dengan format CSV (termasuk baterai LiFePO4)
+    String queueLine = isoTime + "," + String(avgTemp, 1) + "," + String(avgHum, 1) + "," + 
+                       String(avgWind, 1) + "," + String(avgLux, 0) + "," + 
+                       String(avgBatVolts, 2) + "," + String(avgBatPct) + "," + 
+                       String(avgBatCur, 1) + "," + String(avgBatPwr, 1);
     
     time_t now = time(nullptr);
     String filepath = "/q/" + String(now) + ".csv";
@@ -920,7 +989,7 @@ void processOfflineQueue() {
     file.close();
 #endif
     
-    // Parse CSV (Format: isoTime,temp,hum,wind,lux)
+    // Parse CSV (Format: isoTime,temp,hum,wind,lux[,batVolts,batPct,batCur,batPwr])
     int comma1 = line.indexOf(',');
     int comma2 = line.indexOf(',', comma1 + 1);
     int comma3 = line.indexOf(',', comma2 + 1);
@@ -931,12 +1000,29 @@ void processOfflineQueue() {
       float temp = line.substring(comma1 + 1, comma2).toFloat();
       float hum = line.substring(comma2 + 1, comma3).toFloat();
       float wind = line.substring(comma3 + 1, comma4).toFloat();
-      float lux = line.substring(comma4 + 1).toFloat();
+      
+      float lux = 0.0f, batVolts = 0.0f, batCur = 0.0f, batPwr = 0.0f;
+      int batPct = 0;
+      int comma5 = line.indexOf(',', comma4 + 1);
+      if (comma5 > 0) {
+        lux = line.substring(comma4 + 1, comma5).toFloat();
+        int comma6 = line.indexOf(',', comma5 + 1);
+        int comma7 = line.indexOf(',', comma6 + 1);
+        int comma8 = line.indexOf(',', comma7 + 1);
+        if (comma6 > 0 && comma7 > 0 && comma8 > 0) {
+          batVolts = line.substring(comma5 + 1, comma6).toFloat();
+          batPct   = line.substring(comma6 + 1, comma7).toInt();
+          batCur   = line.substring(comma7 + 1, comma8).toFloat();
+          batPwr   = line.substring(comma8 + 1).toFloat();
+        }
+      } else {
+        lux = line.substring(comma4 + 1).toFloat();
+      }
       
       Serial.printf("[QUEUE] ⏳ Mengirim antrean %s ke backend (%s)...\n", 
                     filename.c_str(), protocolToString(deviceConfig.protocol));
       
-      bool successFS = publishTelemetry(isoTime, temp, hum, wind, lux);
+      bool successFS = publishTelemetry(isoTime, temp, hum, wind, lux, batVolts, batPct, batCur, batPwr);
       
       if (successFS) {
          LittleFS.remove(filepath);
@@ -1241,9 +1327,9 @@ void runDeepSleepCycle() {
     String ntpTime = getIso8601Timestamp();
     if (ntpTime != "") isoTime = ntpTime;
 
-    bool sent = publishTelemetry(isoTime, temp, hum, windKmh, lux);
+    bool sent = publishTelemetry(isoTime, temp, hum, windKmh, lux, batVolts, batPct);
     if (deviceConfig.protocol != BackendProtocol::HTTP_REST) {
-      postToWebIngress(isoTime, temp, hum, windKmh, lux);
+      postToWebIngress(isoTime, temp, hum, windKmh, lux, batVolts, batPct);
     }
     processOfflineQueue();
 
