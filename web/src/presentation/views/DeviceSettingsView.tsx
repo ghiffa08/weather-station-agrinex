@@ -8,11 +8,7 @@ import {
   RotateCcw,
   Check,
   CheckCircle, 
-  AlertCircle,
-  Info,
-  Globe,
-  GitBranch,
-  ExternalLink
+  AlertCircle
 } from 'lucide-react';
 import { 
   DEFAULT_DEVICE_CONFIG,
@@ -44,10 +40,10 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
   telemetryLogs = [],
   onConfigSaved,
 }) => {
-  const [activeTab, setActiveTab] = useState<'modules' | 'backend' | 'sync' | 'export' | 'about'>(() => {
+  const [activeTab, setActiveTab] = useState<'modules' | 'backend' | 'sync' | 'export'>(() => {
     try {
       const tabParam = new URLSearchParams(window.location.search).get('tab');
-      if (tabParam === 'modules' || tabParam === 'backend' || tabParam === 'sync' || tabParam === 'export' || tabParam === 'about') {
+      if (tabParam === 'modules' || tabParam === 'backend' || tabParam === 'sync' || tabParam === 'export') {
         return tabParam;
       }
     } catch {
@@ -322,15 +318,6 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
           <FileSpreadsheet size={15} />
           <span>4. Ekspor Data Sensor</span>
         </button>
-        <button
-          onClick={() => setActiveTab('about')}
-          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'about' ? 'neo-flat text-sky-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Info size={15} />
-          <span>5. About & Developer</span>
-        </button>
       </div>
 
       {/* TAB 1: MODUL & PIN SENSOR */}
@@ -378,94 +365,6 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
             setTimeout(() => setExportNotice(null), 4000);
           }}
         />
-      )}
-
-      {/* TAB 5: ABOUT & DEVELOPER */}
-      {activeTab === 'about' && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="p-6 rounded-3xl neo-flat space-y-6 border border-white/60">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-300/60">
-              <div>
-                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  Agrinex Weather Station <span className="text-xs px-2.5 py-0.5 rounded-full bg-sky-500/15 text-sky-700 font-semibold border border-sky-500/30">v2.0 Production</span>
-                </h3>
-                <p className="text-xs text-slate-600 mt-1">
-                  Enterprise-Grade IoT Agrometeorological Weather Station &amp; Microclimate Analysis Platform
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href="https://ghiffa.dev"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-2 rounded-xl neo-flat hover:neo-pressed text-xs font-bold text-sky-700 flex items-center gap-1.5 transition"
-                >
-                  <Globe size={14} />
-                  <span>ghiffa.dev</span>
-                  <ExternalLink size={12} className="opacity-70" />
-                </a>
-                <a
-                  href="https://github.com/ghiffa08/weather-station-agrinex"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-2 rounded-xl neo-flat hover:neo-pressed text-xs font-bold text-slate-700 flex items-center gap-1.5 transition"
-                >
-                  <GitBranch size={14} />
-                  <span>GitHub</span>
-                  <ExternalLink size={12} className="opacity-70" />
-                </a>
-              </div>
-            </div>
-
-            {/* Author Profile Highlight */}
-            <div className="p-4 rounded-2xl neo-pressed flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-md shrink-0">
-                  G
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-slate-800">
-                    Ghiffari (<span className="text-sky-700 font-extrabold">ghiffa.dev</span>)
-                  </div>
-                  <div className="text-xs text-slate-600">
-                    Lead Firmware &amp; Full-Stack Systems Engineer
-                  </div>
-                </div>
-              </div>
-              <div className="text-xs font-semibold text-emerald-800 bg-emerald-500/15 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-                Author &amp; Maintainer
-              </div>
-            </div>
-
-            {/* System Highlights */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div className="p-4 rounded-2xl neo-pressed space-y-2">
-                <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                  <Cpu size={14} className="text-sky-600" />
-                  <span>Hardware &amp; RTOS Architecture</span>
-                </div>
-                <p className="text-slate-600 leading-relaxed">
-                  Dual-Core ESP32 SMP (Core 0 Network / Core 1 Sensor deterministic acquisition) dengan FreeRTOS Mutex, INA226 LiFePO4 fuel gauge, dan deep sleep &lt;20&mu;A.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl neo-pressed space-y-2">
-                <div className="font-bold text-slate-800 flex items-center gap-1.5">
-                  <Database size={14} className="text-emerald-600" />
-                  <span>Agroklimatologi &amp; Zero Data Loss</span>
-                </div>
-                <p className="text-slate-600 leading-relaxed">
-                  Perhitungan standar FAO-56 Penman-Monteith (ET₀), kurva polinom Zhafira Anemometer, redundansi penyimpanan ganda MicroSD FAT32 + LittleFS Flash queue.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-2">
-              <span>Licensed under MIT License — Open Source Agrometeorological Research</span>
-              <span>© {new Date().getFullYear()} ghiffa.dev. All rights reserved.</span>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

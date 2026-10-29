@@ -22,16 +22,17 @@
 </p>
 
 <details open>
-<summary><b>🔍 Tangkapan Layar Lengkap Sistem (Analisis, Pengaturan, About & Mobile)</b></summary>
+<summary><b>🔍 Tangkapan Layar Lengkap Sistem (Analisis, Pengaturan & Mobile PWA)</b></summary>
 <br/>
 
 | **Pusat Analisis Agroklimat (FAO-56 & WMO)** | **Pengaturan Perangkat & Pinout EasyEDA** |
 |:---:|:---:|
 | <img src="docs/screenshots/preview-analytics.png" width="100%" alt="Pusat Analisis Agroklimat" /> | <img src="docs/screenshots/preview-settings.png" width="100%" alt="Pengaturan Pinout EasyEDA" /> |
 
-| **Tentang Aplikasi & Developer (`ghiffa.dev`)** | **Tampilan Responsif Mobile PWA** |
-|:---:|:---:|
-| <img src="docs/screenshots/preview-about.png" width="100%" alt="About & Developer" /> | <img src="docs/screenshots/preview-mobile.png" width="48%" alt="Tampilan Mobile PWA" /> |
+<p align="center">
+  <b>Tampilan Responsif Mobile PWA</b><br/>
+  <img src="docs/screenshots/preview-mobile.png" width="340" alt="Tampilan Mobile PWA" style="border-radius: 14px;" />
+</p>
 
 </details>
 
@@ -239,7 +240,7 @@ Untuk menjamin integritas data telemetri di Firebase Cloud Firestore, file `fire
 
 ## 👨‍💻 Kontributor & Lisensi
 
-- **Author / Lead Engineer:** [Ghiffari](https://github.com/ghiffa08)
+- **Author / Lead Engineer:** [Ghiffarry](https://github.com/ghiffa08)
 - **Official Website / Portfolio:** [https://ghiffa.dev](https://ghiffa.dev)
 - **GitHub Profile:** [@ghiffa08](https://github.com/ghiffa08)
 - **Lisensi:** Proyek ini dilisensikan di bawah lisensi **MIT** — lihat file [LICENSE](LICENSE) untuk rincian lengkap.
