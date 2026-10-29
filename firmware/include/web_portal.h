@@ -216,7 +216,6 @@ inline void setupWebServerRoutes() {
 
   // REST API GET: /api/sensors (Real-time local HTTP sensor stream)
   webServer.on("/api/sensors", HTTP_GET, []() {
-    webServer.sendHeader("Access-Control-Allow-Origin", "*");
     webServer.sendHeader("Cache-Control", "no-cache");
     webServer.sendHeader("Connection", "close");
 
@@ -256,7 +255,6 @@ inline void setupWebServerRoutes() {
 
   // REST API GET: /api/ping
   webServer.on("/api/ping", HTTP_GET, []() {
-    webServer.sendHeader("Access-Control-Allow-Origin", "*");
     webServer.sendHeader("Cache-Control", "no-cache");
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "application/json", "{\"pong\":true,\"time\":" + String(millis()) + "}");
@@ -264,7 +262,6 @@ inline void setupWebServerRoutes() {
 
   // REST API GET: /api/diagnostics
   webServer.on("/api/diagnostics", HTTP_GET, []() {
-    webServer.sendHeader("Access-Control-Allow-Origin", "*");
     webServer.sendHeader("Cache-Control", "no-cache");
     webServer.sendHeader("Connection", "close");
 
@@ -359,9 +356,6 @@ inline void setupWebServerRoutes() {
 
   // CORS Preflight Options Handlers
   auto handleCorsOptions = []() {
-    webServer.sendHeader("Access-Control-Allow-Origin", "*");
-    webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     webServer.send(204);
   };
   webServer.on("/api/sensors", HTTP_OPTIONS, handleCorsOptions);
