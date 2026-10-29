@@ -331,51 +331,34 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
       </header>
 
       {/* Location Bar */}
+      {/* Station Location Banner */}
       <section className="animate-fade-in" style={{ animationDelay: '0.08s' }}>
         <div className="neo-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          <div>
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <span className="text-[9px] uppercase tracking-widest font-extrabold text-[var(--color-neo-text-muted)]">
-                STASIUN &amp; REFERENSI BMKG
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--color-neo-text-muted)]">
+                Stasiun &amp; Referensi BMKG
               </span>
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-700 border border-sky-500/20 font-bold">
-                ADM4: {activeLocation.adm4}
-              </span>
-              <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 font-bold">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/20">
                 {activeLocation.elevation_m} mdpl
               </span>
             </div>
-            <h2 className="text-sm sm:text-xl font-extrabold text-gray-900 tracking-tight mt-1">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight mt-1">
               {activeLocation.village}, {activeLocation.subdistrict}
             </h2>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mt-1">
-              <span>Wilayah: <strong className="text-gray-700">{activeLocation.district}</strong></span>
-              <span className="hidden sm:inline text-gray-300">•</span>
-              <span>Mikrokontroler: <strong className="text-gray-700">ESP32 (ESP-WROOM-32)</strong></span>
-              <span className="hidden sm:inline text-gray-300">•</span>
-              <span>Power: <strong className="text-gray-700">INA226 (LiFePO4 30Ah)</strong></span>
-            </div>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {activeLocation.district}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-            <button
-              onClick={() => setIsLocModalOpen(true)}
-              className="px-3 py-2 rounded-xl neo-flat hover:neo-pressed text-xs font-bold text-sky-700 flex items-center gap-1.5 cursor-pointer transition active:scale-95 shadow-sm"
-              title="Ubah Referensi Wilayah BMKG"
-            >
-              <MapPin size={13} className="text-sky-600" />
-              <span>Ubah Wilayah</span>
-            </button>
-            <div className="px-3 py-1.5 rounded-xl neo-pressed text-gray-700 flex flex-col justify-center text-right shrink-0">
-              <span className="text-[8px] uppercase tracking-widest font-extrabold text-[var(--color-neo-text-muted)]">BMKG REF</span>
-              <span className="text-xs font-extrabold text-gray-800 truncate max-w-[130px] sm:max-w-[180px]">
-                {activeLocation.district}
-              </span>
-              <span className="text-[9px] font-mono text-gray-500 font-bold">
-                {activeLocation.latitude.toFixed(2)}, {activeLocation.longitude.toFixed(2)}
-              </span>
-            </div>
-          </div>
+          <button
+            onClick={() => setIsLocModalOpen(true)}
+            className="self-start sm:self-center px-3.5 py-2 rounded-xl neo-flat hover:neo-pressed text-xs font-bold text-sky-700 flex items-center gap-1.5 cursor-pointer transition active:scale-95 shrink-0 shadow-sm"
+            title="Ubah Referensi Wilayah BMKG"
+          >
+            <MapPin size={14} className="text-sky-600" />
+            <span>Ubah Wilayah</span>
+          </button>
         </div>
       </section>
 

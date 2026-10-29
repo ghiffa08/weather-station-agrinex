@@ -271,45 +271,35 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
       {/* Location & Station Metadata Banner */}
       <section className="neo-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        <div>
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            <span className="text-[9px] uppercase tracking-widest font-extrabold text-[var(--color-neo-text-muted)]">
-              STASIUN &amp; REFERENSI BMKG
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--color-neo-text-muted)]">
+              Stasiun &amp; Referensi BMKG
             </span>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-700 border border-sky-500/20 font-bold">
-              ADM4: {location.adm4}
-            </span>
-            <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 font-bold">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/20">
               {location.elevation_m} mdpl
             </span>
-          </div>
-          <h2 className="text-sm sm:text-xl font-extrabold text-gray-900 tracking-tight mt-1">
-            {location.village}, {location.subdistrict}
-          </h2>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mt-1">
-            <span>Wilayah: <strong className="text-gray-700">{location.district}</strong></span>
-            <span className="hidden sm:inline text-gray-300">•</span>
-            <span>Koordinat: <strong className="text-gray-700 font-mono">{location.latitude.toFixed(2)}, {location.longitude.toFixed(2)}</strong></span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-          <button
-            onClick={() => setIsLocModalOpen(true)}
-            className="px-3 py-2 rounded-xl neo-flat hover:neo-pressed text-xs font-bold text-sky-700 flex items-center gap-1.5 cursor-pointer transition active:scale-95 shadow-sm"
-            title="Ubah Referensi Wilayah BMKG"
-          >
-            <MapPin size={13} className="text-sky-600" />
-            <span>Ubah Wilayah</span>
-          </button>
-          <div className="px-3 py-1.5 rounded-xl neo-pressed text-right">
-            <span className="text-[8px] uppercase tracking-widest font-extrabold text-gray-400 block leading-tight">IoT Sensor</span>
-            <span className="text-xs font-extrabold text-emerald-700 flex items-center gap-1 justify-end">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 flex items-center gap-1">
+              <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`}></span>
               {connected ? 'Live' : 'Offline'}
             </span>
           </div>
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight mt-1">
+            {location.village}, {location.subdistrict}
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {location.district}
+          </p>
         </div>
+
+        <button
+          onClick={() => setIsLocModalOpen(true)}
+          className="self-start sm:self-center px-3.5 py-2 rounded-xl neo-flat hover:neo-pressed text-xs font-bold text-sky-700 flex items-center gap-1.5 cursor-pointer transition active:scale-95 shrink-0 shadow-sm"
+          title="Ubah Referensi Wilayah BMKG"
+        >
+          <MapPin size={14} className="text-sky-600" />
+          <span>Ubah Wilayah</span>
+        </button>
       </section>
 
       {/* 1. Analytics KPI Grid (High Level Metrics) */}
