@@ -6,7 +6,15 @@ import type { WeatherTelemetry } from './core/types/weather.types';
 import { LayoutDashboard, BarChart3, SlidersHorizontal } from 'lucide-react';
 
 export function App() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'settings'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'settings'>(() => {
+    try {
+      const param = new URLSearchParams(window.location.search).get('view');
+      if (param === 'analytics' || param === 'settings') return param;
+    } catch {
+      // ignore
+    }
+    return 'dashboard';
+  });
   const [cachedLogs, setCachedLogs] = useState<WeatherTelemetry[]>([]);
 
   return (
