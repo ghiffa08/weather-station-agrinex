@@ -20,9 +20,10 @@ import {
   type TelemetryLogEntry 
 } from '../components/dashboard/TelemetryLogTable';
 import { downloadTelemetryCsv, downloadTelemetryJson } from '../../core/utils/export.utils';
-import { Settings, BarChart3, MapPin } from 'lucide-react';
+import { Settings, BarChart3, MapPin, Clock, Wifi, RefreshCw, ShieldCheck } from 'lucide-react';
 import { LocationService, type LocationItem } from '../../core/services/LocationService';
 import { LocationSelectorModal } from '../components/atomic/molecules/LocationSelectorModal';
+import { ModuleDiagnosticsModal } from '../components/neumorphic/ModuleDiagnosticsModal';
 import type { WeatherTelemetry } from '../../core/types/weather.types';
 
 interface ChartPoint {
@@ -38,7 +39,16 @@ export interface DashboardProps {
 }
 
 export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsLoaded }: DashboardProps = {}) {
-  const { data: realtimeData, connected } = useWeatherRealtime();
+  const { 
+    data: realtimeData, 
+    connected,
+    targetIp,
+    setTargetIp,
+    mode,
+    setMode,
+    latencyMs,
+    reconnect,
+  } = useWeatherRealtime();
   const { 
     bmkgData: liveBmkg, 
     tomorrowForecast,
@@ -51,6 +61,24 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
   const [telemetryLogs, setTelemetryLogs] = useState<TelemetryLogEntry[]>([]);
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Local IP test and diagnostics state
+  const [inputIp, setInputIp] = useState<string>(targetIp);
+  const [isDiagOpen, setIsDiagOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    setInputIp(targetIp);
+  }, [targetIp]);
+
+  const handleIpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputIp.trim()) {
+      setTargetIp(inputIp.trim());
+      if (mode === 'FIREBASE') {
+        setMode('POLLING');
+      }
+    }
+  };
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -276,7 +304,7 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
     <div className="min-h-screen p-3 sm:p-6 lg:p-8 pb-32 sm:pb-36 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* Top Status & Single Live Clock Bar */}
       <div className="flex items-center justify-between animate-fade-in pt-1">
-        <StatusBadge connected={connected} />
+        <StatusBadge connected={connected} mode={mode} />
         
         <div className="flex items-center gap-2">
           <LiveClock />
@@ -300,6 +328,84 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
               <Settings size={16} />
             </button>
           )}
+        </div>
+      </div>
+
+      {/* REALTIME TEST & LOCAL TARGET IP CONTROL BAR */}
+      <div className="neo-card p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2.5 animate-fade-in">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-gray-700 tracking-tight">Stream:</span>
+          {/* Cloud vs Local Switcher */}
+          <div className="flex items-center neo-pressed p-0.5 rounded-xl gap-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setMode('FIREBASE')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                mode === 'FIREBASE' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Cloud
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('POLLING')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                mode === 'POLLING' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Local IP
+            </button>
+          </div>
+
+          {latencyMs !== null && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-gray-700 neo-pressed px-2.5 py-1 rounded-full">
+              <Clock size={11} className="text-gray-600" /> {latencyMs}ms
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* IP Input Form for Local Testing */}
+          {mode !== 'FIREBASE' && (
+            <form onSubmit={handleIpSubmit} className="flex items-center gap-1 neo-pressed px-2 py-0.5 rounded-xl">
+              <Wifi size={13} className="text-gray-500 ml-0.5" />
+              <input
+                type="text"
+                value={inputIp}
+                onChange={(e) => setInputIp(e.target.value)}
+                placeholder="IP ESP32"
+                className="bg-transparent text-xs font-mono font-bold text-gray-800 focus:outline-none w-28 px-1 py-1"
+              />
+              <button
+                type="submit"
+                className="px-2 py-1 rounded-lg bg-gray-800 text-white font-bold text-[11px] cursor-pointer hover:bg-gray-900 transition"
+              >
+                Tes
+              </button>
+            </form>
+          )}
+
+          {mode !== 'FIREBASE' && (
+            <button
+              type="button"
+              onClick={reconnect}
+              title="Reconnect Local Stream"
+              className="p-1.5 rounded-xl neo-flat hover:neo-pressed text-gray-700 hover:text-gray-900 transition cursor-pointer"
+            >
+              <RefreshCw size={13} />
+            </button>
+          )}
+
+          {/* Cek Modul Button */}
+          <button
+            type="button"
+            onClick={() => setIsDiagOpen(true)}
+            title="Diagnostik Semua Modul & Sensor"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-800 text-white font-bold text-xs hover:bg-gray-900 active:scale-95 transition cursor-pointer shadow-sm"
+          >
+            <ShieldCheck size={14} className="text-emerald-400" />
+            <span>Cek Modul</span>
+          </button>
         </div>
       </div>
 
@@ -444,6 +550,15 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
       <LocationSelectorModal
         isOpen={isLocModalOpen}
         onClose={() => setIsLocModalOpen(false)}
+      />
+
+      {/* Module Diagnostics Hardware Modal */}
+      <ModuleDiagnosticsModal
+        isOpen={isDiagOpen}
+        onClose={() => setIsDiagOpen(false)}
+        targetIp={targetIp}
+        telemetry={fieldData}
+        connected={connected}
       />
     </div>
   );

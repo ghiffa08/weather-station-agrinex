@@ -80,8 +80,9 @@ WiFiClient wifiClient;
 #endif
 
 // ──────────── Hardware Status Flags ────────────
-bool rtcOk = false;
-bool sdOk  = false;
+bool dhtOk    = false;
+bool rtcOk    = false;
+bool sdOk     = false;
 
 // ──────────── Anemometer ISR Variables ────────────
 volatile uint32_t anemoPulseCount = 0;
@@ -455,7 +456,7 @@ bool readDhtSensor(float &temp, float &hum) {
 void jobSensorRead() {
   // --- Baca DHT22 ---
   float temp = 0.0f, hum = 0.0f;
-  bool dhtOk = false;
+  dhtOk = false;
   if (deviceConfig.modules.dht22) {
     dhtOk = readDhtSensor(temp, hum);
     if (!dhtOk) {
@@ -501,13 +502,18 @@ void jobSensorRead() {
     uint32_t currentPulses = anemoPulseCount;
     interrupts();
 
-    uint32_t pulsesDelta = currentPulses - lastAnemoCount;
+    uint32_t pulsesDelta = (currentPulses >= lastAnemoCount) ? (currentPulses - lastAnemoCount) : currentPulses;
     float rotasiPerDetik = (elapsedSec > 0) ? (float)pulsesDelta / elapsedSec : 0.0f;
 
-    // Zhafira Anemometer 1.3 Formula
-    float mPerSec = (-0.0181f * rotasiPerDetik * rotasiPerDetik) +
-                    (1.3859f * rotasiPerDetik) + 1.4055f;
-    if (mPerSec <= 1.5f) mPerSec = 0.0f;
+    // Zhafira Anemometer 1.3 Formula with low-speed linear response
+    float mPerSec = 0.0f;
+    if (pulsesDelta > 0 && rotasiPerDetik > 0.0f) {
+      mPerSec = (-0.0181f * rotasiPerDetik * rotasiPerDetik) +
+                (1.3859f * rotasiPerDetik) + 1.4055f;
+      if (mPerSec <= 0.0f) {
+        mPerSec = (rotasiPerDetik * 0.0875f) + 0.1f;
+      }
+    }
     windKmh = mPerSec * 3.6f;
 
     lastAnemoCount = currentPulses;

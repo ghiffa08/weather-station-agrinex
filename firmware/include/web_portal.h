@@ -17,6 +17,9 @@ extern WebServerType webServer;
 extern bool dhtOk;
 extern bool rtcOk;
 extern bool sdOk;
+extern bool bh1750Ok;
+extern bool inaOk;
+extern volatile uint32_t anemoPulseCount;
 extern SensorSample latestReading;
 
 // HTML page generator for ESP8266 Local Web Settings Portal
@@ -213,11 +216,18 @@ inline void setupWebServerRoutes() {
 
   // REST API GET: /api/sensors (Real-time local HTTP sensor stream)
   webServer.on("/api/sensors", HTTP_GET, []() {
+    webServer.sendHeader("Access-Control-Allow-Origin", "*");
+    webServer.sendHeader("Cache-Control", "no-cache");
+    webServer.sendHeader("Connection", "close");
+
     JsonDocument doc;
     doc["temperature"] = (double)((int)(latestReading.temperature * 10)) / 10.0;
     doc["humidity"]    = (double)((int)(latestReading.humidity * 10)) / 10.0;
     doc["wind_speed"]  = (double)((int)(latestReading.windSpeed * 10)) / 10.0;
     doc["light_lux"]   = (int)latestReading.lightLux;
+    doc["raw_pulses"]  = (uint32_t)anemoPulseCount;
+    doc["wifi_rssi"]   = WiFi.RSSI();
+    doc["uptime_sec"]  = millis() / 1000;
 
     doc["battery_voltage"]    = (double)((int)(latestReading.batteryVolts * 100)) / 100.0;
     doc["battery_current"]    = (double)((int)(latestReading.batteryCurrent * 10)) / 10.0;
@@ -231,10 +241,132 @@ inline void setupWebServerRoutes() {
     bat["percentage"] = latestReading.batteryPct;
     bat["ok"]         = (latestReading.batteryVolts > 0.5f);
 
+    JsonObject st = doc["status"].to<JsonObject>();
+    st["dht22"]      = dhtOk;
+    st["bh1750"]     = bh1750Ok;
+    st["anemometer"] = deviceConfig.modules.anemometer;
+    st["ina226"]     = inaOk;
+    st["rtc_ds3231"] = rtcOk;
+    st["sd_card"]    = sdOk;
+
     String resp;
     serializeJson(doc, resp);
     webServer.send(200, "application/json", resp);
   });
+
+  // REST API GET: /api/ping
+  webServer.on("/api/ping", HTTP_GET, []() {
+    webServer.sendHeader("Access-Control-Allow-Origin", "*");
+    webServer.sendHeader("Cache-Control", "no-cache");
+    webServer.sendHeader("Connection", "close");
+    webServer.send(200, "application/json", "{\"pong\":true,\"time\":" + String(millis()) + "}");
+  });
+
+  // REST API GET: /api/diagnostics
+  webServer.on("/api/diagnostics", HTTP_GET, []() {
+    webServer.sendHeader("Access-Control-Allow-Origin", "*");
+    webServer.sendHeader("Cache-Control", "no-cache");
+    webServer.sendHeader("Connection", "close");
+
+    // Re-verify I2C devices
+    Wire.beginTransmission(INA226_I2C_ADDR);
+    bool inaFound = (Wire.endTransmission() == 0);
+
+    Wire.beginTransmission(0x23);
+    bool bhFound = (Wire.endTransmission() == 0);
+    if (!bhFound) {
+      Wire.beginTransmission(0x5C);
+      bhFound = (Wire.endTransmission() == 0);
+    }
+
+    Wire.beginTransmission(0x68);
+    bool rtcFound = (Wire.endTransmission() == 0);
+
+    JsonDocument doc;
+    doc["all_ok"] = (dhtOk && (bh1750Ok || bhFound) && (inaOk || inaFound));
+    doc["timestamp_ms"] = millis();
+
+    JsonObject mods = doc["modules"].to<JsonObject>();
+
+    // INA226
+    JsonObject mIna = mods["ina226"].to<JsonObject>();
+    mIna["name"] = "INA226 Battery & Power Monitor";
+    mIna["bus"] = "I2C (SDA 21, SCL 22)";
+    mIna["address"] = "0x40";
+    mIna["connected"] = (inaOk || inaFound);
+    mIna["voltage"] = (double)((int)(latestReading.batteryVolts * 100)) / 100.0;
+    mIna["current_ma"] = (double)((int)(latestReading.batteryCurrent * 10)) / 10.0;
+    mIna["power_mw"] = (double)((int)(latestReading.batteryPower * 10)) / 10.0;
+    mIna["percentage"] = latestReading.batteryPct;
+    mIna["charging"] = (latestReading.batteryCurrent > 10.0f || latestReading.batteryVolts >= 3.45f);
+    mIna["message"] = (inaOk || inaFound) ? "Sensor INA226 terdeteksi & membaca tegangan bus LiFePO4" : "INA226 tidak merespon pada alamat 0x40";
+
+    // DHT22
+    JsonObject mDht = mods["dht22"].to<JsonObject>();
+    mDht["name"] = "DHT22 Suhu & Kelembapan";
+    mDht["pin"] = "GPIO" + String(deviceConfig.pins.dht_pin);
+    mDht["connected"] = dhtOk;
+    mDht["temperature"] = (double)((int)(latestReading.temperature * 10)) / 10.0;
+    mDht["humidity"] = (double)((int)(latestReading.humidity * 10)) / 10.0;
+    mDht["message"] = dhtOk ? "DHT22 membaca suhu & kelembapan normal" : "DHT22 gagal membaca / checksum error";
+
+    // BH1750
+    JsonObject mBh = mods["bh1750"].to<JsonObject>();
+    mBh["name"] = "BH1750 Lux Sensor";
+    mBh["bus"] = "I2C (SDA 21, SCL 22)";
+    mBh["address"] = bhFound ? "0x23 / 0x5C" : "0x23";
+    mBh["connected"] = (bh1750Ok || bhFound);
+    mBh["light_lux"] = (int)latestReading.lightLux;
+    mBh["message"] = (bh1750Ok || bhFound) ? "BH1750 terdeteksi pada bus I2C" : "BH1750 tidak merespon pada I2C 0x23 / 0x5C. Periksa kabel SDA/SCL.";
+
+    // Anemometer
+    JsonObject mAnemo = mods["anemometer"].to<JsonObject>();
+    mAnemo["name"] = "Anemometer Pulse Counter";
+    mAnemo["pin"] = "GPIO" + String(deviceConfig.pins.anemo_pin);
+    mAnemo["connected"] = deviceConfig.modules.anemometer;
+    mAnemo["pulses"] = (uint32_t)anemoPulseCount;
+    mAnemo["wind_speed"] = (double)((int)(latestReading.windSpeed * 10)) / 10.0;
+    mAnemo["message"] = "Interrupt aktif pada pin D27. Putar mangkok anemometer untuk uji pulsa.";
+
+    // RTC DS3231
+    JsonObject mRtc = mods["rtc_ds3231"].to<JsonObject>();
+    mRtc["name"] = "RTC DS3231";
+    mRtc["bus"] = "I2C (SDA 21, SCL 22)";
+    mRtc["connected"] = (rtcOk || rtcFound);
+    mRtc["message"] = (rtcOk || rtcFound) ? "RTC DS3231 terdeteksi pada 0x68" : "RTC tidak terdeteksi (Waktu memakai NTP)";
+
+    // MicroSD
+    JsonObject mSd = mods["sd_card"].to<JsonObject>();
+    mSd["name"] = "MicroSD Card";
+    mSd["bus"] = "SPI (CS Pin 5)";
+    mSd["connected"] = sdOk;
+    mSd["message"] = sdOk ? "MicroSD Card terpasang & dapat menulis log" : "MicroSD Card tidak terpasang";
+
+    // System
+    JsonObject sys = doc["system"].to<JsonObject>();
+    sys["ip"] = WiFi.localIP().toString();
+    sys["ssid"] = WiFi.SSID();
+    sys["rssi"] = WiFi.RSSI();
+    #if defined(ESP32)
+    sys["free_heap"] = ESP.getFreeHeap();
+    #endif
+    sys["uptime_sec"] = millis() / 1000;
+
+    String resp;
+    serializeJson(doc, resp);
+    webServer.send(200, "application/json", resp);
+  });
+
+  // CORS Preflight Options Handlers
+  auto handleCorsOptions = []() {
+    webServer.sendHeader("Access-Control-Allow-Origin", "*");
+    webServer.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    webServer.sendHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    webServer.send(204);
+  };
+  webServer.on("/api/sensors", HTTP_OPTIONS, handleCorsOptions);
+  webServer.on("/api/ping", HTTP_OPTIONS, handleCorsOptions);
+  webServer.on("/api/diagnostics", HTTP_OPTIONS, handleCorsOptions);
 
   // Settings Web Page GET
   webServer.on("/settings", HTTP_GET, []() {

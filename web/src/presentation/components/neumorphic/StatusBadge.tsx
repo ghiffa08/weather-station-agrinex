@@ -1,11 +1,13 @@
 import { cn } from './Card';
-import { Cloud, CloudOff } from 'lucide-react';
+import { Cloud, CloudOff, Wifi, Radio } from 'lucide-react';
 
-export function StatusBadge({ connected }: { connected: boolean }) {
+export type RealtimeMode = 'FIREBASE' | 'POLLING' | 'SSE';
+
+export function StatusBadge({ connected, mode = 'FIREBASE' }: { connected: boolean; mode?: RealtimeMode }) {
   return (
     <div className="flex items-center">
       <div className={cn(
-        "flex items-center gap-2 px-3.5 py-1.5 rounded-full font-bold text-xs tracking-wide uppercase shadow-[var(--shadow-neo-sm)] transition-all",
+        "flex items-center gap-2 px-3 py-1.5 rounded-full font-bold text-xs tracking-wide uppercase shadow-[var(--shadow-neo-sm)] transition-all",
         connected ? "text-gray-800" : "text-gray-400"
       )}>
         {connected ? (
@@ -15,8 +17,22 @@ export function StatusBadge({ connected }: { connected: boolean }) {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-700"></span>
             </span>
             <span className="flex items-center gap-1.5">
-              <Cloud size={13} className="text-gray-700" />
-              <span>Firebase Live</span>
+              {mode === 'FIREBASE' ? (
+                <>
+                  <Cloud size={13} className="text-gray-700" />
+                  <span>Firebase Live</span>
+                </>
+              ) : mode === 'SSE' ? (
+                <>
+                  <Radio size={13} className="text-gray-700" />
+                  <span>Local SSE</span>
+                </>
+              ) : (
+                <>
+                  <Wifi size={13} className="text-gray-700" />
+                  <span>Local IP Poll</span>
+                </>
+              )}
             </span>
           </>
         ) : (
@@ -29,3 +45,4 @@ export function StatusBadge({ connected }: { connected: boolean }) {
     </div>
   );
 }
+

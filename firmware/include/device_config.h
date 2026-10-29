@@ -77,7 +77,7 @@ struct DeviceConfig {
   MqttConfig mqtt;
   HttpRestConfig http_rest;
 
-  uint32_t sensor_read_ms = 10000;
+  uint32_t sensor_read_ms = 2000;
   uint32_t publish_interval_ms = 900000;
   bool enable_deep_sleep = false;
 };
