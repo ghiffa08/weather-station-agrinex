@@ -8,8 +8,18 @@ import {
   RotateCcw,
   Check,
   CheckCircle, 
-  AlertCircle
+  AlertCircle,
+  Activity,
+  Cloud,
+  Wifi,
+  Clock,
+  RefreshCw,
+  ShieldCheck
 } from 'lucide-react';
+import { Card } from '../components/neumorphic/Card';
+import { StatusBadge } from '../components/neumorphic/StatusBadge';
+import { ModuleDiagnosticsModal } from '../components/neumorphic/ModuleDiagnosticsModal';
+import { useWeatherRealtime } from '../../hooks/useWeatherRealtime';
 import { 
   DEFAULT_DEVICE_CONFIG,
   ESP32_DEFAULT_PINS,
@@ -56,6 +66,25 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
   const [isPushing, setIsPushing] = useState<boolean>(false);
   const [pushStatus, setPushStatus] = useState<{ success?: boolean; message?: string } | null>(null);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  // Real-time stream mode & diagnostics state
+  const { 
+    data: realtimeData, 
+    connected, 
+    targetIp, 
+    setTargetIp, 
+    mode, 
+    setMode, 
+    latencyMs, 
+    reconnect 
+  } = useWeatherRealtime();
+
+  const [inputIp, setInputIp] = useState<string>(targetIp);
+  const [isDiagOpen, setIsDiagOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    setInputIp(targetIp);
+  }, [targetIp]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -281,6 +310,110 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
         </div>
       )}
 
+      {/* REAL-TIME STREAM SOURCE & LOCAL IP TESTING CARD */}
+      <Card className="p-4 sm:p-5 space-y-4 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-300/40 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Activity size={16} className="text-sky-600" />
+              <h2 className="text-sm font-bold text-gray-800">Sumber Aliran Data (Stream Mode)</h2>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Pilih apakah dashboard menampilkan data Cloud (Firebase) atau pengujian lokal via IP ESP32
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <StatusBadge connected={connected} mode={mode} />
+            {latencyMs !== null && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-gray-700 neo-pressed px-2.5 py-1 rounded-full">
+                <Clock size={11} className="text-gray-600" /> {latencyMs}ms
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          {/* Mode Switcher */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 block">Mode Data Dashboard</label>
+            <div className="flex rounded-2xl p-1 neo-pressed gap-1 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setMode('FIREBASE')}
+                className={`flex-1 py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === 'FIREBASE' ? 'neo-flat text-sky-700 shadow-sm' : 'text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                <Cloud size={14} />
+                <span>Cloud (Firebase)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('POLLING')}
+                className={`flex-1 py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                  mode === 'POLLING' ? 'neo-flat text-sky-700 shadow-sm' : 'text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                <Wifi size={14} />
+                <span>Local IP (ESP32)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Local IP Input & Action Buttons */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-700 block">IP ESP32 &amp; Uji Hardware</label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-1.5 neo-pressed px-3 py-1.5 rounded-xl">
+                <Wifi size={14} className="text-gray-400 shrink-0" />
+                <input
+                  type="text"
+                  value={inputIp}
+                  onChange={(e) => setInputIp(e.target.value)}
+                  placeholder="192.168.18.14"
+                  className="bg-transparent text-xs font-mono font-bold text-gray-800 focus:outline-none w-full"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (inputIp.trim()) {
+                    setTargetIp(inputIp.trim());
+                    if (mode === 'FIREBASE') setMode('POLLING');
+                  }
+                }}
+                className="px-3.5 py-2 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-xs font-bold text-sky-700 cursor-pointer transition shadow-sm shrink-0"
+              >
+                Hubungkan
+              </button>
+
+              {mode !== 'FIREBASE' && (
+                <button
+                  type="button"
+                  onClick={reconnect}
+                  title="Reconnect"
+                  className="p-2 rounded-xl neo-flat hover:neo-pressed active:scale-95 text-gray-600 hover:text-gray-900 cursor-pointer transition shadow-sm shrink-0"
+                >
+                  <RefreshCw size={13} />
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setIsDiagOpen(true)}
+                title="Diagnostik Semua Modul & Sensor"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-800 text-white font-bold text-xs hover:bg-gray-900 active:scale-95 transition cursor-pointer shadow-sm shrink-0"
+              >
+                <ShieldCheck size={14} className="text-emerald-400" />
+                <span>Cek Modul</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* Main Navigation Segmented Control */}
       <div className="flex rounded-2xl p-1.5 neo-pressed gap-1 text-xs font-bold overflow-x-auto">
         <button
@@ -367,6 +500,15 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
           }}
         />
       )}
+
+      {/* Module Diagnostics Hardware Modal */}
+      <ModuleDiagnosticsModal
+        isOpen={isDiagOpen}
+        onClose={() => setIsDiagOpen(false)}
+        targetIp={targetIp}
+        telemetry={realtimeData}
+        connected={connected}
+      />
     </div>
   );
 };
