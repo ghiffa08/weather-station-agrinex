@@ -8,9 +8,10 @@
 [![Tailwind CSS](https://img.shields.io/badge/UI-Neumorphic%20Tailwind-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com/)
 [![Firebase](https://img.shields.io/badge/Cloud-Firebase%20Firestore-FFCA28.svg?logo=firebase)](https://firebase.google.com/)
 [![Supabase](https://img.shields.io/badge/Database-Supabase%20PostgREST-3ECF8E.svg?logo=supabase)](https://supabase.com/)
+[![Author](https://img.shields.io/badge/Author-ghiffa.dev-informational.svg?logo=googlechrome&logoColor=white)](https://ghiffa.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Agrinex Weather Station** adalah platform stasiun cuaca agro-klimatologi cerdas kelas produksi (*enterprise-grade*) berbasis **ESP32 Dual-Core (FreeRTOS)** dan **ESP8266**. Dirancang khusus untuk pemantauan presisi iklim mikro pertanian, penghitungan evapotranspirasi standar internasional (**FAO-56 Penman-Monteith**), monitoring daya baterai solar panel (**INA226 LiFePO4**), serta ketahanan data mutlak (*Zero Data Loss*) melalui penyimpanan berlapis MicroSD dan LittleFS.
+**Agrinex Weather Station** adalah platform stasiun cuaca agro-klimatologi cerdas kelas produksi (*enterprise-grade*) berbasis **ESP32 Dual-Core (FreeRTOS)** dan **ESP8266**, dikembangkan oleh [**ghiffa.dev**](https://ghiffa.dev). Dirancang khusus untuk pemantauan presisi iklim mikro pertanian, penghitungan evapotranspirasi standar internasional (**FAO-56 Penman-Monteith**), monitoring daya baterai solar panel (**INA226 LiFePO4**), serta ketahanan data mutlak (*Zero Data Loss*) melalui penyimpanan berlapis MicroSD dan LittleFS.
 
 ---
 
@@ -216,5 +217,7 @@ Untuk menjamin integritas data telemetri di Firebase Cloud Firestore, file `fire
 
 ## 👨‍💻 Kontributor & Lisensi
 
-- **Lead Engineer / Author:** [Ghiffari](https://github.com/ghiffa08)
+- **Author / Lead Engineer:** [Ghiffari](https://github.com/ghiffa08)
+- **Official Website / Portfolio:** [https://ghiffa.dev](https://ghiffa.dev)
+- **GitHub Profile:** [@ghiffa08](https://github.com/ghiffa08)
 - **Lisensi:** Proyek ini dilisensikan di bawah lisensi **MIT** — lihat file [LICENSE](LICENSE) untuk rincian lengkap.

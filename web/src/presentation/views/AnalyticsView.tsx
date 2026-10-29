@@ -378,8 +378,19 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       </section>
 
       {/* Footer */}
-      <footer className="text-center text-[10px] text-[var(--color-neo-text-muted)] pt-4 pb-2">
-        Agrinex Weather Station Analytics Engine — Mengadopsi Standar WMO Guide No. 8 &amp; FAO Irrigation and Drainage Paper 56
+      <footer className="text-center text-xs text-[var(--color-neo-text-muted)] pt-6 pb-4 flex flex-col items-center justify-center gap-1">
+        <div>Agrinex Weather Station Analytics Engine — Mengadopsi Standar WMO Guide No. 8 &amp; FAO Paper 56</div>
+        <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+          Developed by{' '}
+          <a
+            href="https://ghiffa.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-sky-600 dark:text-sky-400 hover:underline hover:text-sky-700 transition"
+          >
+            ghiffa.dev
+          </a>
+        </div>
       </footer>
 
       {/* Dynamic BMKG Location Selector Modal */}

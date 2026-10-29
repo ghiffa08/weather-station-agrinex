@@ -442,8 +442,19 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
       />
 
       {/* Footer */}
-      <footer className="text-center text-[10px] text-[var(--color-neo-text-muted)] pt-4 pb-2">
-        Agrinex Weather Station Dashboard v2.0 — Data sensor diperbarui setiap 15 menit (RTOS averaged)
+      <footer className="text-center text-xs text-[var(--color-neo-text-muted)] pt-6 pb-4 flex flex-col items-center justify-center gap-1">
+        <div>Agrinex Weather Station Dashboard v2.0 — Data sensor diperbarui setiap 15 menit (RTOS averaged)</div>
+        <div className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+          Developed by{' '}
+          <a
+            href="https://ghiffa.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-sky-600 dark:text-sky-400 hover:underline hover:text-sky-700 transition"
+          >
+            ghiffa.dev
+          </a>
+        </div>
       </footer>
 
       {/* Dynamic BMKG Location Selector Modal */}
