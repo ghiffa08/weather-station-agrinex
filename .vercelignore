@@ -1,0 +1,10 @@
+node_modules
+web/node_modules
+.pio
+firmware
+.git
+.vscode
+dist
+web/dist
+*.bin
+*.elf
