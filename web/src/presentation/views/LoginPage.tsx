@@ -7,8 +7,8 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState<string>('admin@agrinex.id');
-  const [password, setPassword] = useState<string>('agrinex2026');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -60,10 +60,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <input
                   type="email"
                   required
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nama@agrinex.id"
-                  className="w-full bg-transparent text-xs text-gray-900 placeholder-gray-400 focus:outline-none"
+                  placeholder=""
+                  className="w-full bg-transparent text-xs text-gray-900 focus:outline-none"
                 />
               </div>
             </div>
@@ -76,10 +77,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-transparent text-xs text-gray-900 placeholder-gray-400 focus:outline-none font-mono"
+                  placeholder=""
+                  className="w-full bg-transparent text-xs text-gray-900 focus:outline-none font-mono"
                 />
                 <button
                   type="button"
