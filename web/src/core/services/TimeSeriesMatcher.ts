@@ -170,7 +170,8 @@ export class TimeSeriesMatcher {
       const bmkgHum = closestBmkg ? closestBmkg.hu : log.humidity;
       const bmkgWindMs = closestBmkg ? EnvironmentalPhysics.kmhToMs(closestBmkg.ws) : 0;
 
-      const windIotMs = EnvironmentalPhysics.kmhToMs(log.wind_speed ?? 0);
+      const rawWindKmh = log.wind_speed ?? 0;
+      const windIotMs = Math.min(50, EnvironmentalPhysics.kmhToMs(rawWindKmh > 180 ? 180 : rawWindKmh));
       const normWindIot = EnvironmentalPhysics.normalizeWindTo2Meters(windIotMs, 1.5);
       const solarWm2 = EnvironmentalPhysics.luxToSolarIrradiance(log.light_lux ?? 0);
 

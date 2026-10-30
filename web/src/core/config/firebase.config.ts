@@ -18,6 +18,8 @@ export const FIREBASE_CONFIG = {
 // Initialize Firebase App
 export const firebaseApp = initializeApp(FIREBASE_CONFIG);
 
+import { getAuth } from 'firebase/auth';
+
 // Initialize Firestore with Persistent IndexedDB Cache (Optimized for Free Tier)
 // Reduces read operations by serving cached data on repeat page loads.
 export const db = initializeFirestore(firebaseApp, {
@@ -25,3 +27,6 @@ export const db = initializeFirestore(firebaseApp, {
     tabManager: persistentMultipleTabManager(),
   }),
 });
+
+// Initialize Firebase Authentication
+export const auth = getAuth(firebaseApp);

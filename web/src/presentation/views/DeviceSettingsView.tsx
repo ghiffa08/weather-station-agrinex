@@ -14,7 +14,8 @@ import {
   Wifi,
   Clock,
   RefreshCw,
-  ShieldCheck
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 import { Card } from '../components/neumorphic/Card';
 import { StatusBadge } from '../components/neumorphic/StatusBadge';
@@ -27,14 +28,14 @@ import {
   type SensorCalibrationConfig
 } from '../../hooks/useWeatherRealtime';
 import { 
-  DEFAULT_DEVICE_CONFIG,
-  ESP32_DEFAULT_PINS,
-  ESP8266_DEFAULT_PINS
+  DEFAULT_DEVICE_CONFIG, 
+  ESP32_DEFAULT_PINS, 
+  ESP8266_DEFAULT_PINS 
 } from '../../core/types/device-config.types';
 import type { 
   DeviceConfiguration, 
   BackendProtocolType,
-  BoardType
+  BoardType 
 } from '../../core/types/device-config.types';
 import type { WeatherTelemetry } from '../../core/types/weather.types';
 import { ModulesSection } from '../components/settings/ModulesSection';
@@ -42,6 +43,7 @@ import { PinoutSection } from '../components/settings/PinoutSection';
 import { BackendSection } from '../components/settings/BackendSection';
 import { SyncSection } from '../components/settings/SyncSection';
 import { ExportCenterSection } from '../components/settings/ExportCenterSection';
+import { UserManagementSection } from '../components/settings/UserManagementSection';
 
 interface DeviceSettingsViewProps {
   onBack: () => void;
@@ -56,10 +58,10 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
   telemetryLogs = [],
   onConfigSaved,
 }) => {
-  const [activeTab, setActiveTab] = useState<'modules' | 'backend' | 'sync' | 'export'>(() => {
+  const [activeTab, setActiveTab] = useState<'modules' | 'backend' | 'sync' | 'export' | 'users'>(() => {
     try {
       const tabParam = new URLSearchParams(window.location.search).get('tab');
-      if (tabParam === 'modules' || tabParam === 'backend' || tabParam === 'sync' || tabParam === 'export') {
+      if (tabParam === 'modules' || tabParam === 'backend' || tabParam === 'sync' || tabParam === 'export' || tabParam === 'users') {
         return tabParam;
       }
     } catch {
@@ -228,7 +230,8 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
     setPushStatus(null);
     try {
       const cleanIp = deviceIp.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      const endpoint = `http://${cleanIp}/api/config`;
+      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      const endpoint = isHttps ? `/esp32-proxy/api/config` : `http://${cleanIp}/api/config`;
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -564,6 +567,15 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
           <FileSpreadsheet size={14} />
           <span>4. Ekspor</span>
         </button>
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`flex-1 min-w-[95px] py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            activeTab === 'users' ? 'neo-flat text-sky-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Users size={14} />
+          <span>5. Pengguna</span>
+        </button>
       </div>
 
       {/* TAB 1: MODUL & PIN SENSOR */}
@@ -606,6 +618,16 @@ export const DeviceSettingsView: React.FC<DeviceSettingsViewProps> = ({
       {activeTab === 'export' && (
         <ExportCenterSection 
           telemetryLogs={telemetryLogs}
+          onNotice={(msg) => {
+            setExportNotice(msg);
+            setTimeout(() => setExportNotice(null), 4000);
+          }}
+        />
+      )}
+
+      {/* TAB 5: KELOLA PENGGUNA & AKUN SEEDER */}
+      {activeTab === 'users' && (
+        <UserManagementSection 
           onNotice={(msg) => {
             setExportNotice(msg);
             setTimeout(() => setExportNotice(null), 4000);

@@ -56,7 +56,9 @@ export function ModuleDiagnosticsModal({ isOpen, onClose, targetIp, telemetry, c
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500);
-      const res = await fetch(`http://${targetIp}/api/diagnostics`, { signal: controller.signal });
+      const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+      const fetchUrl = isHttps ? `/esp32-proxy/api/diagnostics` : `http://${targetIp}/api/diagnostics`;
+      const res = await fetch(fetchUrl, { signal: controller.signal });
       clearTimeout(timeoutId);
 
       if (res.ok) {

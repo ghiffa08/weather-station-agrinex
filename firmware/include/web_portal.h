@@ -20,8 +20,6 @@ extern bool sdOk;
 extern bool bh1750Ok;
 extern bool inaOk;
 extern volatile uint32_t anemoPulseCount;
-extern volatile uint32_t anemoGlitchCount;
-extern volatile uint32_t anemoLastLowWidthUs;
 extern SensorSample latestReading;
 
 // HTML page generator for ESP8266 Local Web Settings Portal
@@ -305,8 +303,6 @@ inline void setupWebServerRoutes() {
     an["pin"] = deviceConfig.pins.anemo_pin;
     an["pin_level"] = digitalRead(deviceConfig.pins.anemo_pin);
     an["valid_pulses"] = (uint32_t)anemoPulseCount;
-    an["rejected_glitches"] = (uint32_t)anemoGlitchCount;
-    an["last_low_width_us"] = (uint32_t)anemoLastLowWidthUs;
     an["wind_kmh"] = latestReading.windSpeed;
     doc["uptime_sec"] = millis() / 1000;
     String resp;
@@ -419,6 +415,7 @@ inline void setupWebServerRoutes() {
   webServer.on("/api/sensors", HTTP_OPTIONS, handleCorsOptions);
   webServer.on("/api/ping", HTTP_OPTIONS, handleCorsOptions);
   webServer.on("/api/diagnostics", HTTP_OPTIONS, handleCorsOptions);
+  webServer.on("/api/config", HTTP_OPTIONS, handleCorsOptions);
 
   // Settings Web Page GET
   webServer.on("/settings", HTTP_GET, []() {

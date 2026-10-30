@@ -1,11 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dashboard } from './presentation/views/Dashboard';
 import { AnalyticsView } from './presentation/views/AnalyticsView';
 import { DeviceSettingsView } from './presentation/views/DeviceSettingsView';
+import { LoginPage } from './presentation/views/LoginPage';
+import { OnboardingView } from './presentation/views/OnboardingView';
+import { AuthService, type AuthUser } from './core/services/AuthService';
 import type { WeatherTelemetry } from './core/types/weather.types';
-import { LayoutDashboard, BarChart3, SlidersHorizontal } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  BarChart3, 
+  SlidersHorizontal, 
+  LogOut, 
+  User
+} from 'lucide-react';
 
 export function App() {
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('demo') === 'admin') {
+        return AuthService.loginAsDemo('Administrator');
+      }
+    } catch {}
+    return AuthService.getCurrentUser();
+  });
+
+  const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean>(() => {
+    return AuthService.isOnboardingCompleted();
+  });
+
   const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'settings'>(() => {
     try {
       const param = new URLSearchParams(window.location.search).get('view');
@@ -17,6 +40,47 @@ export function App() {
   });
   const [cachedLogs, setCachedLogs] = useState<WeatherTelemetry[]>([]);
 
+  // Subscribe to auth state changes
+  useEffect(() => {
+    const unsub = AuthService.subscribe((updatedUser) => {
+      setUser(updatedUser);
+      setIsOnboardingCompleted(AuthService.isOnboardingCompleted());
+    });
+    return () => unsub();
+  }, []);
+
+  // 1. Flow: Jika belum login, tampilkan halaman Login
+  if (!user) {
+    return (
+      <LoginPage
+        onLoginSuccess={(loggedUser) => {
+          setUser(loggedUser);
+          setIsOnboardingCompleted(AuthService.isOnboardingCompleted());
+        }}
+      />
+    );
+  }
+
+  // 2. Flow: Jika belum pernah onboarding atau membuka manual wizard, tampilkan OnboardingView
+  // 2. Flow: Tampilkan OnboardingView HANYA satu kali saja saat stasiun belum disetup
+  if (!isOnboardingCompleted) {
+    return (
+      <OnboardingView
+        onComplete={() => {
+          AuthService.setOnboardingCompleted(true);
+          setIsOnboardingCompleted(true);
+          setCurrentView('dashboard');
+        }}
+        onSkip={() => {
+          AuthService.setOnboardingCompleted(true);
+          setIsOnboardingCompleted(true);
+          setCurrentView('dashboard');
+        }}
+      />
+    );
+  }
+
+  // 3. Flow: Tampilan Utama Dashboard Stasiun Cuaca
   return (
     <div className="min-h-screen bg-[var(--color-neo-bg)] flex flex-col relative">
       {/* Main Page View Content */}
@@ -62,7 +126,7 @@ export function App() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
               setCurrentView('dashboard');
             }}
-            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
               currentView === 'dashboard'
                 ? 'neo-pressed text-sky-700 font-extrabold shadow-inner scale-[1.02]'
                 : 'text-gray-600 hover:text-gray-900 active:scale-95'
@@ -78,7 +142,7 @@ export function App() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
               setCurrentView('analytics');
             }}
-            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
               currentView === 'analytics'
                 ? 'neo-pressed text-sky-700 font-extrabold shadow-inner scale-[1.02]'
                 : 'text-gray-600 hover:text-gray-900 active:scale-95'
@@ -94,7 +158,7 @@ export function App() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
               setCurrentView('settings');
             }}
-            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer ${
               currentView === 'settings'
                 ? 'neo-pressed text-sky-700 font-extrabold shadow-inner scale-[1.02]'
                 : 'text-gray-600 hover:text-gray-900 active:scale-95'
@@ -103,6 +167,32 @@ export function App() {
             <SlidersHorizontal size={15} />
             <span>Pengaturan</span>
           </button>
+
+          {/* Separator */}
+          <div className="h-5 w-[1px] bg-gray-400/30 mx-0.5" />
+
+          {/* User Profile & Logout */}
+          <div className="flex items-center gap-1 pl-1">
+            <div 
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full neo-pressed text-[11px] font-bold text-gray-700"
+              title={`Login sebagai: ${user.displayName} (${user.role})`}
+            >
+              <User size={12} className="text-sky-600" />
+              <span className="truncate max-w-[90px]">{user.displayName.split(' ')[0]}</span>
+            </div>
+
+            <button
+              onClick={() => {
+                if (window.confirm('Keluar dari sistem portal stasiun?')) {
+                  AuthService.logout();
+                }
+              }}
+              title="Keluar (Logout)"
+              className="p-2 sm:p-2.5 rounded-full text-gray-500 hover:text-rose-600 hover:bg-rose-500/10 transition-all cursor-pointer active:scale-95"
+            >
+              <LogOut size={15} />
+            </button>
+          </div>
         </div>
       </nav>
     </div>

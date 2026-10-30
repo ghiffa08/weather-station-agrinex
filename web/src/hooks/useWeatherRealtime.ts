@@ -47,7 +47,7 @@ export function useWeatherRealtime(initialIp = '192.168.18.3') {
   });
 
   const [mode, setModeState] = useState<RealtimeMode>(() => {
-    return (localStorage.getItem('agrinex_realtime_mode') as RealtimeMode) || 'FIREBASE';
+    return (localStorage.getItem('agrinex_realtime_mode') as RealtimeMode) || 'POLLING';
   });
 
   const [data, setData] = useState<WeatherTelemetry | null>(null);
@@ -214,7 +214,8 @@ export function useWeatherRealtime(initialIp = '192.168.18.3') {
       eventSourceRef.current = null;
     }
 
-    const url = `http://${targetIp}/events`;
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const url = isHttps ? `/esp32-proxy/events` : `http://${targetIp}/events`;
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
@@ -252,7 +253,9 @@ export function useWeatherRealtime(initialIp = '192.168.18.3') {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 1500);
-        const res = await fetch(`http://${targetIp}/api/sensors`, {
+        const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+        const fetchUrl = isHttps ? `/esp32-proxy/api/sensors` : `http://${targetIp}/api/sensors`;
+        const res = await fetch(fetchUrl, {
           signal: controller.signal,
           cache: 'no-store',
         });

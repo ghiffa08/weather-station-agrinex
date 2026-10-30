@@ -23,6 +23,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/bmkg-api/, ''),
         secure: false,
+      },
+      '/esp32-proxy': {
+        target: 'http://192.168.18.3',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/esp32-proxy/, ''),
+        secure: false,
       }
     }
   },

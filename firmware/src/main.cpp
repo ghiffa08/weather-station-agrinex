@@ -85,16 +85,8 @@ bool rtcOk    = false;
 bool sdOk     = false;
 
 // ──────────── Anemometer ISR Variables ────────────
-// Pulse-width filter: pulsa valid = level LOW bertahan >= ANEMO_MIN_LOW_US,
-// jarak antar pulsa >= ANEMO_MIN_PERIOD_US. Spike noise/induksi WiFi (orde µs) ditolak.
-#define ANEMO_MIN_LOW_US     500UL    // 0.5 ms lebar LOW minimum
-#define ANEMO_MIN_PERIOD_US  2000UL   // 2 ms → maks 500 pulsa/detik (~158 km/h)
 volatile uint32_t anemoPulseCount = 0;
-volatile uint32_t anemoGlitchCount = 0;   // jumlah pulsa noise yang ditolak (diagnostik)
 volatile unsigned long anemoLastPulseUs = 0;
-volatile unsigned long anemoFallUs = 0;
-volatile bool anemoLowActive = false;
-volatile uint32_t anemoLastLowWidthUs = 0;
 
 // ──────────── Sensor Ring Buffer (Defined in config.h) ────────────
 
@@ -122,9 +114,8 @@ void connectWiFi();
 void syncNtpTime();
 String getIso8601Timestamp();
 IRAM_ATTR void anemoIsr();
-void i2cBusRecover(int sda, int scl);
-bool initRtc(int attempts);
-bool initBh1750(uint8_t preferredAddr, int attempts);
+bool initRtc(int attempts = 1);
+bool initBh1750(uint8_t preferredAddr, int attempts = 1);
 int calculateBatteryPercent(float volts, bool isCharging);
 void jobSensorRead();
 void jobFirebasePublish();
@@ -197,14 +188,10 @@ void setup() {
   // setelah boost converter TPS61088 menyala, sebelum bus I2C di-scan.
   connectWiFi();
 
-  // --- 1. I2C Bus Recovery + Init (Dinamis sesuai pin konfigurasi) ---
-  i2cBusRecover(deviceConfig.pins.i2c_sda, deviceConfig.pins.i2c_scl);
+  // --- 1. I2C Init (Dinamis sesuai pin konfigurasi, persis local-project) ---
   Wire.begin(deviceConfig.pins.i2c_sda, deviceConfig.pins.i2c_scl);
   Wire.setClock(100000); // 100kHz standard I2C speed
-#if defined(ESP32)
-  Wire.setTimeOut(50);
-#endif
-  delay(200); // Waktu stabilisasi sirkuit daya & pull-up I2C slave (persis local-project)
+  delay(200); // Waktu stabilisasi sirkuit daya & pull-up I2C slave
 
   Serial.printf("[I2C] Scanning I2C bus pada SDA(GPIO%d) / SCL(GPIO%d)...\n", 
                 deviceConfig.pins.i2c_sda, deviceConfig.pins.i2c_scl);
@@ -234,27 +221,53 @@ void setup() {
     inaOk = false;
   }
 
-  // --- 2. Inisialisasi RTC DS3231 (persis local-project: rtc.begin() langsung, + retry) ---
+  // --- 2. Inisialisasi RTC DS3231 (persis local-project: rtc.begin() langsung) ---
   if (deviceConfig.modules.rtc_ds3231) {
-    rtcOk = initRtc(3);
-    if (!rtcOk) {
-      Serial.println(F("[INIT] RTC DS3231 ✗ — akan auto-reconnect setiap 5 detik"));
+    if (rtc.begin()) {
+      rtcOk = true;
+      Serial.println(F("[INIT] RTC DS3231 (I2C 0x68) ✓"));
+      if (rtc.lostPower()) {
+        Serial.println(F("[RTC] ⚠ RTC lost power, setting compile time..."));
+        rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+      }
+      DateTime rtcNow = rtc.now();
+      if (rtcNow.year() >= 2024 && rtcNow.year() <= 2099 && !ntpSynced) {
+        timeval tv = { (time_t)rtcNow.unixtime(), 0 };
+        settimeofday(&tv, nullptr);
+        Serial.printf("[RTC] ✓ Waktu sistem disetel dari RTC: %04d-%02d-%02d %02d:%02d:%02d\n",
+                      rtcNow.year(), rtcNow.month(), rtcNow.day(),
+                      rtcNow.hour(), rtcNow.minute(), rtcNow.second());
+      }
+    } else {
+      Serial.println(F("[INIT] RTC DS3231 ✗ — akan auto-reconnect saat baca sensor"));
+      rtcOk = false;
     }
   } else {
     Serial.println(F("[CONFIG] RTC DS3231 dinonaktifkan (Unchecked) — Waktu sistem mengandalkan NTP."));
     rtcOk = false;
   }
 
-  // --- 3. Inisialisasi BH1750 (persis local-project: lightMeter.begin langsung, + retry) ---
+  // --- 3. Inisialisasi BH1750 (persis local-project) ---
   if (deviceConfig.modules.bh1750) {
-    uint8_t preferred = (deviceConfig.pins.bh1750_addr == 0x5C || deviceConfig.pins.bh1750_addr == 92) ? 0x5C : 0x23;
-    if (bh1750Addr != 0) preferred = bh1750Addr;
-    bh1750Ok = initBh1750(preferred, 3);
-    if (!bh1750Ok) {
-      Serial.println(F("[INIT] BH1750 Standby / Testing — akan auto-reconnect setiap 5 detik"));
+    uint8_t preferred = (bh1750Addr != 0) ? bh1750Addr : 
+      ((deviceConfig.pins.bh1750_addr == 0x5C || deviceConfig.pins.bh1750_addr == 92) ? 0x5C : 0x23);
+    uint8_t alt = (preferred == 0x23) ? 0x5C : 0x23;
+
+    if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, preferred)) {
+      bh1750Ok = true;
+      deviceConfig.pins.bh1750_addr = preferred;
+      Serial.printf("[INIT] BH1750 Light Sensor ✓ (Addr: 0x%02X)\n", preferred);
+    } else if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, alt)) {
+      bh1750Ok = true;
+      deviceConfig.pins.bh1750_addr = alt;
+      Serial.printf("[INIT] BH1750 Light Sensor ✓ (Addr: 0x%02X)\n", alt);
+    } else {
+      bh1750Ok = false;
+      Serial.println(F("[INIT] BH1750 Standby / Testing — akan auto-reconnect saat baca sensor"));
     }
   } else {
     Serial.println(F("[CONFIG] BH1750 dinonaktifkan (Unchecked)."));
+    bh1750Ok = false;
   }
 
   // --- 4. Inisialisasi MicroSD Card (Kondisional Checkbox: Tanpa hang jika tidak dipasang) ---
@@ -291,14 +304,12 @@ void setup() {
     Serial.println(F("[CONFIG] DHT22 dinonaktifkan (Unchecked)."));
   }
 
-  // --- 6. Anemometer (Pulse-Width Filter: CHANGE untuk mengukur lebar pulsa LOW) ---
+  // --- 6. Anemometer (Debounce 5ms, RISING edge persis local-project) ---
   if (deviceConfig.modules.anemometer) {
     pinMode(deviceConfig.pins.anemo_pin, INPUT_PULLUP);
     anemoPulseCount = 0;
-    anemoGlitchCount = 0;
-    attachInterrupt(digitalPinToInterrupt(deviceConfig.pins.anemo_pin), anemoIsr, CHANGE);
-    Serial.printf("[INIT] Anemometer (Pin GPIO%d, Pulse-Width Filter >= %luus) ✓\n",
-                  deviceConfig.pins.anemo_pin, ANEMO_MIN_LOW_US);
+    attachInterrupt(digitalPinToInterrupt(deviceConfig.pins.anemo_pin), anemoIsr, RISING);
+    Serial.printf("[INIT] Anemometer (Pin GPIO%d, Debounce 5ms, RISING) ✓\n", deviceConfig.pins.anemo_pin);
   } else {
     Serial.println(F("[CONFIG] Anemometer dinonaktifkan (Unchecked)."));
   }
@@ -407,58 +418,22 @@ void loop() {
 // ================================================================
 IRAM_ATTR void anemoIsr() {
   unsigned long now = micros();
-#if defined(ESP32)
-  int level = gpio_get_level((gpio_num_t)deviceConfig.pins.anemo_pin);
-#else
-  int level = digitalRead(deviceConfig.pins.anemo_pin);
-#endif
+  unsigned long interval = now - anemoLastPulseUs;
+  if (interval < 5000) return; // 5ms debounce
 
-  if (level == 0) {
-    // Tepi turun: mulai ukur lebar pulsa LOW
-    anemoFallUs = now;
-    anemoLowActive = true;
+  // Filter induksi listrik 50Hz (~20ms) dan ripple 100Hz (~10ms) saat kabel diam
+  if ((interval >= 18500 && interval <= 21500) || (interval >= 9200 && interval <= 10800)) {
+    anemoLastPulseUs = now;
     return;
   }
 
-  // Tepi naik: validasi lebar pulsa LOW
-  if (!anemoLowActive) return;
-  anemoLowActive = false;
-  unsigned long lowWidth = now - anemoFallUs;
-  anemoLastLowWidthUs = lowWidth;
-
-  if (lowWidth >= ANEMO_MIN_LOW_US && (now - anemoLastPulseUs) >= ANEMO_MIN_PERIOD_US) {
-    anemoPulseCount++;
-    anemoLastPulseUs = now;
-  } else {
-    anemoGlitchCount++;   // spike noise / induksi ditolak
-  }
+  anemoPulseCount++;
+  anemoLastPulseUs = now;
 }
 
 // ================================================================
-//  I2C Helpers: Bus Recovery + Init dengan Retry (RTC & BH1750)
+//  I2C Helpers: Init dengan Retry (RTC & BH1750)
 // ================================================================
-// Jika slave I2C (mis. DS3231) tertahan di tengah transaksi saat ESP32 reset,
-// SDA bisa terkunci LOW. 9 clock SCL + STOP membebaskan bus.
-void i2cBusRecover(int sda, int scl) {
-  pinMode(sda, INPUT_PULLUP);
-  pinMode(scl, INPUT_PULLUP);
-  delayMicroseconds(10);
-  if (digitalRead(sda) == HIGH && digitalRead(scl) == HIGH) return; // bus normal
-
-  Serial.println(F("[I2C] ⚠ Bus tertahan — menjalankan recovery 9 clock SCL"));
-  pinMode(scl, OUTPUT_OPEN_DRAIN);
-  for (int i = 0; i < 9 && digitalRead(sda) == LOW; i++) {
-    digitalWrite(scl, LOW);  delayMicroseconds(5);
-    digitalWrite(scl, HIGH); delayMicroseconds(5);
-  }
-  // STOP condition
-  pinMode(sda, OUTPUT_OPEN_DRAIN);
-  digitalWrite(sda, LOW);  delayMicroseconds(5);
-  digitalWrite(scl, HIGH); delayMicroseconds(5);
-  digitalWrite(sda, HIGH); delayMicroseconds(5);
-  pinMode(sda, INPUT_PULLUP);
-  pinMode(scl, INPUT_PULLUP);
-}
 
 bool initRtc(int attempts) {
   for (int i = 0; i < attempts; i++) {
@@ -604,11 +579,14 @@ void jobSensorRead() {
     uint32_t pulsesDelta = (currentPulses >= lastAnemoCount) ? (currentPulses - lastAnemoCount) : currentPulses;
     float pulsesPerSec = pulsesDelta / elapsedSec;
 
-    // Diam / tidak diputar → tidak ada pulsa valid → 0.0 km/h.
-    // Minimal 2 pulsa valid per jendela agar 1 pulsa nyasar tidak memunculkan angka.
+    // Diam / tidak diputar (pulsesDelta == 0) → 0.0 km/h
+    // Diputar (pulsesDelta > 0) → hitung kecepatan angin persis local-project
     float mPerSec = 0.0f;
-    if (pulsesDelta >= 2) {
-      mPerSec = (pulsesPerSec * 0.0875f) + 0.1f;
+    if (pulsesDelta > 0 && pulsesPerSec > 0.0f) {
+      bool isMainsNoise = (pulsesPerSec >= 46.0f && pulsesPerSec <= 54.0f) || (pulsesPerSec >= 94.0f && pulsesPerSec <= 106.0f);
+      if (!isMainsNoise) {
+        mPerSec = (pulsesPerSec * 0.0875f) + 0.1f;
+      }
     }
     windKmh = mPerSec * 3.6f;
 

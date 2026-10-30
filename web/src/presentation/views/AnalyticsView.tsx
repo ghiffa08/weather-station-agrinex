@@ -340,7 +340,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <ChartWidget data={tempChart} title="Tren Suhu Udara" unit="°C" />
           <ChartWidget data={humChart} title="Tren Kelembapan" unit="%" />
-          <ChartWidget data={windChart} title="Tren Kecepatan Angin" unit=" m/s" />
+          <ChartWidget data={windChart} title="Tren Kecepatan Angin" unit="m/s" />
         </div>
       </section>
 

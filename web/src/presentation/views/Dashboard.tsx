@@ -20,7 +20,7 @@ import {
   type TelemetryLogEntry 
 } from '../components/dashboard/TelemetryLogTable';
 import { downloadTelemetryCsv, downloadTelemetryJson } from '../../core/utils/export.utils';
-import { Settings, BarChart3, MapPin } from 'lucide-react';
+import { Settings, BarChart3, MapPin, Wifi, Cloud, Clock } from 'lucide-react';
 import { LocationService, type LocationItem } from '../../core/services/LocationService';
 import { LocationSelectorModal } from '../components/atomic/molecules/LocationSelectorModal';
 import type { WeatherTelemetry } from '../../core/types/weather.types';
@@ -38,7 +38,20 @@ export interface DashboardProps {
 }
 
 export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsLoaded }: DashboardProps = {}) {
-  const { data: realtimeData, connected, mode } = useWeatherRealtime();
+  const { data: realtimeData, connected, mode, setMode, targetIp, setTargetIp, latencyMs } = useWeatherRealtime();
+  const [inputIp, setInputIp] = useState<string>(targetIp);
+
+  useEffect(() => {
+    setInputIp(targetIp);
+  }, [targetIp]);
+
+  const handleIpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputIp.trim()) {
+      setTargetIp(inputIp.trim());
+    }
+  };
+
   const { 
     bmkgData: liveBmkg, 
     tomorrowForecast,
@@ -64,6 +77,23 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
       setActiveLocation(loc);
     });
     return () => unsub();
+  }, []);
+
+  const [stationName, setStationName] = useState<string>(() => localStorage.getItem('agrinex_station_name') || 'Stasiun Cuaca Agrinex');
+  const [stationElevation, setStationElevation] = useState<number>(() => {
+    const saved = localStorage.getItem('agrinex_station_elevation');
+    return saved ? Number(saved) : activeLocation.elevation_m;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const n = localStorage.getItem('agrinex_station_name');
+      if (n) setStationName(n);
+      const e = localStorage.getItem('agrinex_station_elevation');
+      if (e) setStationElevation(Number(e));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Calendar display state (initialized synchronously to actual local date)
@@ -325,6 +355,59 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
         </div>
       </div>
 
+      {/* LOCAL TARGET IP CONTROL BAR (Persis local-project) */}
+      <div className="neo-card p-3 sm:p-3.5 flex flex-wrap items-center justify-between gap-3 animate-fade-in">
+        <div className="flex items-center gap-2.5">
+          <StatusBadge connected={connected} mode={mode} />
+          {latencyMs !== null && (
+            <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-gray-700 neo-pressed px-2.5 py-1 rounded-full">
+              <Clock size={12} className="text-gray-700" /> {latencyMs}ms
+            </span>
+          )}
+        </div>
+
+        {/* IP Target Input Form & Mode Switcher */}
+        <div className="flex flex-wrap items-center gap-2">
+          <form onSubmit={handleIpSubmit} className="flex items-center gap-1.5 neo-pressed px-2.5 py-1 rounded-xl">
+            <Wifi size={14} className="text-gray-700 ml-1" />
+            <input
+              type="text"
+              value={inputIp}
+              onChange={(e) => setInputIp(e.target.value)}
+              placeholder="e.g. 192.168.18.3"
+              className="bg-transparent text-xs font-mono font-bold text-gray-800 focus:outline-none w-28 sm:w-32 px-1"
+            />
+            <button 
+              type="submit" 
+              className="px-2.5 py-1 rounded-lg bg-gray-800 text-white font-bold text-xs cursor-pointer hover:bg-gray-900 transition-colors active:scale-95 shadow-sm"
+            >
+              Hubungkan
+            </button>
+          </form>
+
+          <div className="flex items-center neo-pressed p-1 rounded-xl gap-1">
+            <button
+              type="button"
+              onClick={() => setMode('POLLING')}
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                mode === 'POLLING' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              <Wifi size={12} /> Local HTTP
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('FIREBASE')}
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                mode === 'FIREBASE' ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              <Cloud size={12} /> Cloud
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Header Section */}
       <header className="pt-2 pb-1 animate-fade-in" style={{ animationDelay: '0.05s' }}>
         <div className="flex justify-between items-start">
@@ -359,10 +442,10 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--color-neo-text-muted)]">
-                Stasiun &amp; Referensi BMKG
+                {stationName}
               </span>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-800 border border-emerald-500/20">
-                {activeLocation.elevation_m} mdpl
+                {stationElevation} mdpl
               </span>
             </div>
             <h2 className="text-base sm:text-lg font-bold text-gray-900 tracking-tight mt-1">
@@ -415,7 +498,7 @@ export function Dashboard({ onNavigateToSettings, onNavigateToAnalytics, onLogsL
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 animate-fade-in" style={{ animationDelay: '0.3s' }}>
         <ChartWidget data={tempChart} title="Tren Suhu Udara" unit="°C" />
         <ChartWidget data={humChart} title="Tren Kelembapan" unit="%" />
-        <ChartWidget data={windChart} title="Tren Kecepatan Angin" unit=" m/s" />
+        <ChartWidget data={windChart} title="Tren Kecepatan Angin" unit="m/s" />
       </section>
 
       {/* Benchmark Statistical Evaluation Cards */}
