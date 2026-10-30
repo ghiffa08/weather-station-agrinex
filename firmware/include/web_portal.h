@@ -20,6 +20,8 @@ extern bool sdOk;
 extern bool bh1750Ok;
 extern bool inaOk;
 extern volatile uint32_t anemoPulseCount;
+extern volatile uint32_t anemoGlitchCount;
+extern volatile uint32_t anemoLastLowWidthUs;
 extern SensorSample latestReading;
 
 // HTML page generator for ESP8266 Local Web Settings Portal
@@ -277,6 +279,39 @@ inline void setupWebServerRoutes() {
     webServer.sendHeader("Cache-Control", "no-cache");
     webServer.sendHeader("Connection", "close");
     webServer.send(200, "application/json", "{\"pong\":true,\"time\":" + String(millis()) + "}");
+  });
+
+  // REST API GET: /api/debug — Scan penuh bus I2C + statistik filter anemometer
+  webServer.on("/api/debug", HTTP_GET, []() {
+    webServer.sendHeader("Cache-Control", "no-cache");
+    JsonDocument doc;
+    JsonArray found = doc["i2c_devices"].to<JsonArray>();
+    for (uint8_t addr = 1; addr < 127; addr++) {
+      Wire.beginTransmission(addr);
+      if (Wire.endTransmission() == 0) {
+        char buf[6];
+        snprintf(buf, sizeof(buf), "0x%02X", addr);
+        found.add(buf);
+      }
+    }
+    doc["i2c_sda"] = deviceConfig.pins.i2c_sda;
+    doc["i2c_scl"] = deviceConfig.pins.i2c_scl;
+    doc["sda_level"] = digitalRead(deviceConfig.pins.i2c_sda);
+    doc["scl_level"] = digitalRead(deviceConfig.pins.i2c_scl);
+    doc["rtc_ok"] = rtcOk;
+    doc["bh1750_ok"] = bh1750Ok;
+    doc["ina226_ok"] = inaOk;
+    JsonObject an = doc["anemometer"].to<JsonObject>();
+    an["pin"] = deviceConfig.pins.anemo_pin;
+    an["pin_level"] = digitalRead(deviceConfig.pins.anemo_pin);
+    an["valid_pulses"] = (uint32_t)anemoPulseCount;
+    an["rejected_glitches"] = (uint32_t)anemoGlitchCount;
+    an["last_low_width_us"] = (uint32_t)anemoLastLowWidthUs;
+    an["wind_kmh"] = latestReading.windSpeed;
+    doc["uptime_sec"] = millis() / 1000;
+    String resp;
+    serializeJson(doc, resp);
+    webServer.send(200, "application/json", resp);
   });
 
   // REST API GET: /api/diagnostics
