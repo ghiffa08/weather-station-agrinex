@@ -1,12 +1,12 @@
-# LAPORAN TUGAS AKHIR / PROYEK RISET IOT
+# LAPORAN RISET PENELITIAN IOT (RESEARCH PROJECT REPORT)
 ## SISTEM STASIUN CUACA MIKROKLIMAT PERTANIAN BERBASIS ESP32 & ESTIMASI EVAPOTRANSPIRASI (AGRINEX WEATHER STATION)
 
 ---
 
-### IDENTITAS PROYEK
+### IDENTITAS PROYEK RISET
 - **Nama Proyek:** Agrinex Smart Agro-Weather Station & Microclimate Comparative Analytics
 - **Institusi / Laboratorium:** Laboratorium Sistem Tertanam & Rekayasa Komputasi
-- **Pengembang / Mahasiswa:** Pratama Surya (ghiffa08)
+- **Peneliti / Pengembang (Principal Researcher):** Haikal Jibran Al-Ghiffarry (ghiffa08)
 - **Topik Kajian:** Internet of Things (IoT), Agrometeorologi, Embedded FreeRTOS, Sistem Penyelarasan Prediksi BMKG, dan Arsitektur Web Modern
 - **Repositori Kode:** [https://github.com/ghiffa08/weather-station-agrinex](https://github.com/ghiffa08/weather-station-agrinex)
 - **Aplikasi Web Live (Vercel):** [https://web-vert-tau-abafcrdbgk.vercel.app](https://web-vert-tau-abafcrdbgk.vercel.app)
@@ -37,7 +37,7 @@ Stasiun cuaca mikroklimat ini dirancang khusus untuk memecahkan kendala presisi 
 
 ## DAFTAR ISI LAPORAN
 
-Laporan ini disusun secara sistematis dan mendalam menjadi dokumen-dokumen terpisah untuk memudahkan peninjauan akademis oleh dosen pembimbing dan penguji:
+Laporan ini disusun secara sistematis dan mendalam menjadi dokumen-dokumen terpisah untuk memudahkan peninjauan akademis oleh dosen penilai dan reviewer riset:
 
 | Bab | Berkas Dokumen Markdown | Cakupan & Fokus Pembahasan |
 | :---: | :--- | :--- |

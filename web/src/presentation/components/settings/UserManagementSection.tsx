@@ -314,7 +314,7 @@ export const UserManagementSection: React.FC<UserManagementSectionProps> = ({ on
                     required
                     value={formData.displayName}
                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                    placeholder="Contoh: Pratama Surya"
+                    placeholder="Contoh: Haikal Jibran Al-Ghiffarry"
                     className="w-full bg-transparent text-xs font-medium text-gray-800 focus:outline-none"
                   />
                 </div>

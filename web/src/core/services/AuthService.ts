@@ -31,7 +31,7 @@ export interface ManagedUser {
 export const DEFAULT_SEEDER_ADMIN: ManagedUser = {
   id: 'usr-admin-seed',
   email: 'admin@agrinex.id',
-  displayName: 'Pratama Surya, S.T.',
+  displayName: 'Haikal Jibran Al-Ghiffarry',
   role: 'Administrator',
   password: 'admin',
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -259,7 +259,7 @@ class AuthServiceClass {
         const user: AuthUser = {
           uid: 'station-usr-' + Date.now(),
           email: cleanEmail,
-          displayName: autoRole === 'Administrator' ? 'Pratama Surya (Admin)' : 'Petugas Lapang Agrinex',
+          displayName: autoRole === 'Administrator' ? 'Haikal Jibran Al-Ghiffarry (Admin)' : 'Petugas Lapang Agrinex',
           role: autoRole,
           stationAccess: 'Stasiun Kuningan (ESP32-01)',
           loginTime: new Date().toISOString(),
@@ -292,7 +292,7 @@ class AuthServiceClass {
     const user: AuthUser = {
       uid: 'demo-' + autoRole.toLowerCase().replace(/\s+/g, '-'),
       email: raw.includes('@') ? raw : `${autoRole.toLowerCase().replace(/\s+/g, '.')}@agrinex.id`,
-      displayName: autoRole === 'Administrator' ? 'Pratama Surya, S.T.' : (autoRole === 'Agronomist' ? 'Dr. Ir. Hendrawan' : 'Budi Santoso (Field Team)'),
+      displayName: autoRole === 'Administrator' ? 'Haikal Jibran Al-Ghiffarry' : (autoRole === 'Agronomist' ? 'Dr. Ir. Hendrawan' : 'Budi Santoso (Field Team)'),
       role: autoRole,
       stationAccess: 'Stasiun Kuningan (ESP32-01)',
       loginTime: new Date().toISOString(),

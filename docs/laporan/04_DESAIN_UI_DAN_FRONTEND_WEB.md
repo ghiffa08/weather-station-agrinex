@@ -175,7 +175,7 @@ Sesuai instruksi untuk menjaga antarmuka tetap bersih dan tidak mengganggu alur 
 1. **Integrasi Langsung dalam Halaman (*In-Page Expansion*):**  
    Saat tombol **`Tambah Pengguna`** atau ikon **Edit** ditekan, formulir input terbuka secara mulus langsung di atas daftar pengguna dalam kontainer *neo-pressed* 2-kolom yang proporsional.
 2. **Akun Seeder Utama Bawaan (`admin@agrinex.id`):**  
-   Sistem secara otomatis menginjeksi 1 akun seeder admin superuser dengan nama `Pratama Surya, S.T.` dan peran `Administrator`. Kredensial bawaan: kata sandi `admin` atau `agrinex2026`.
+   Sistem secara otomatis menginjeksi 1 akun seeder admin superuser dengan nama `Haikal Jibran Al-Ghiffarry` dan peran `Administrator`. Kredensial bawaan: kata sandi `admin` atau `agrinex2026`.
 3. **Mekanisme Perlindungan Keamanan (*Safety Guards*):**  
    - Akun seeder utama diberi label khusus `Seeder` dan tombol hapusnya dinonaktifkan secara permanen agar stasiun cuaca tidak pernah kehilangan akses administrator.
    - Akun yang sedang aktif digunakan login diberi penanda `Anda (Aktif)` dan tidak dapat dihapus oleh diri sendiri.

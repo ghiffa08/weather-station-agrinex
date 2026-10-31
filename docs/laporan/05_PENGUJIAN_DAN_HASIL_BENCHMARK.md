@@ -217,9 +217,9 @@ Berdasarkan seluruh tahapan perancangan, implementasi perangkat keras, pengemban
 
 ---
 
-## 5.7 Saran Pengembangan Lanjutan untuk Skripsi / Riset Terapan
+## 5.7 Saran Pengembangan Lanjutan untuk Riset & Implementasi Terapan
 
-Sebagai pijakan untuk penelitian skripsi, tesis, atau implementasi skala komersial lanjutan, diajukan beberapa saran pengembangan strategis:
+Sebagai pijakan untuk kelanjutan riset penelitian terapan, publikasi ilmiah, atau implementasi skala industri/komersial lanjutan, diajukan beberapa saran pengembangan strategis:
 
 1. **Integrasi Komunikasi Jarak Jauh Berdaya Rendah (LoRaWAN / NB-IoT):**
    Pada area perkebunan atau persawahan terpencil (*rural area*) yang tidak terjangkau sinyal Wi-Fi router, disarankan untuk mengintegrasikan modul transceiver **LoRa SX1262** atau modul seluler hemat energi **SIM7080G (NB-IoT/Cat-M1)** dengan topologi *star-network* menuju gateway agrikultur pusat.
