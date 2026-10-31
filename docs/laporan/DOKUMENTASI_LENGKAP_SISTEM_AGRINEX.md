@@ -170,6 +170,90 @@ Pemasangan sensor di area perkebunan terbuka rentan terhadap induksi elektromagn
 
 ---
 
+### 3.7 Skema Rangkaian Elektronika Terpadu (Schematic Circuit Diagram)
+Perancangan skema rangkaian elektronika stasiun cuaca Agrinex dilakukan menggunakan platform otomasi desain elektronik (EDA) EasyEDA versi 1.0 (diperbarui per 20 Oktober 2026). Skema ini mengintegrasikan seluruh subsistem ke dalam satu kesatuan sirkuit yang rapi, modular, dan memiliki proteksi kelistrikan yang andal.
+
+![Skema Rangkaian Elektronika Utama Stasiun Cuaca](assets/hw_01_schematic_circuit.png)
+*Gambar 3.2: Skema Rangkaian Elektronika Utama Stasiun Cuaca Agrinex (EasyEDA Schematic1 v1.0).*
+
+Pembedahan blok fungsional pada skema rangkaian mencakup:
+1. **Unit Pemroses Inti (U3 - ESP-WROOM-32):**
+   - Pin `VIN` (Pin 1) menerima pasokan tegangan teregulasi `+5V` dari konverter daya, distabilkan oleh kapasitor elektrolit C2 ($470\ \mu\text{F}$) untuk mencegah fluktuasi tegangan saat transmisi Wi-Fi aktif.
+   - Jalur I2C terhubung pada pin GPIO 21 (`SDA`, Pin 20) dan GPIO 22 (`SCL`, Pin 17), diperkuat oleh resistor pull-up eksternal R3 dan R4 masing-masing $4.7\text{ k}\Omega$ ke rel `VCC` ($3.3\text{ V}$).
+   - Pin GPIO 27 (Pin 6) difungsikan sebagai input interupsi perangkat keras yang terhubung ke konektor anemometer CN1 dengan resistor pull-up R1 ($4.7\text{ k}\Omega$).
+   - Pin GPIO 4 / GPIO 32 terhubung ke konektor sensor DHT22 (CN3) untuk komunikasi data digital satu kabel (*single-bus*).
+   - Antarmuka SPI untuk modul MicroSD (SD1) terhubung ke pin GPIO 5 (`CS`), GPIO 18 (`SCK`), GPIO 19 (`MISO`), dan GPIO 23 (`MOSI`), dengan resistor pull-up R2 ($10\text{ k}\Omega$) pada pin Chip Select.
+   - Pin GPIO 32 (Pin 10) difungsikan sebagai sinyal kontrol gerbang (*gate control*) untuk transistor MOSFET daya Q1 melalui resistor pembagi R5 ($10\text{ k}\Omega$).
+
+2. **Subsistem Catu Daya & Manajemen Energi Terbarukan:**
+   - **Konektor Input Panel Surya (U5 - TB007-508-02BE):** Menerima daya fotovoltaik dari panel surya eksternal dan meneruskannya ke pin input `IN+` dan `IN-` modul pengisian U6.
+   - **Modul Pengisian Baterai Surya (U6 - TP5000 Type-C):** Mengatur proses pengisian sel baterai LiFePO4 dengan metode CC/CV bertegangan ambang batas $3.6\text{ V}$.
+   - **Konektor Baterai (U4 - TB007-508-02BE):** Menghubungkan sel baterai LiFePO4 $3.2\text{ V}$ $30\text{ Ah}$. Kutub positif baterai dilewatkan secara seri melalui sensor arus INA226 (I1).
+   - **Sensor Daya & Arus Presisi Tinggi (I1 - INA226 Module):** Mengukur tegangan bus baterai dan drop tegangan pada resistor shunt $0.1\ \Omega$ untuk memantau aliran arus masuk maupun arus beban, berkomunikasi dengan mikrokontroler via I2C (`0x40`).
+   - **Modul Step-Up Boost Converter (U2 - TPS61088):** Menaikkan tegangan baterai ($3.0 - 3.65\text{ V}$) menjadi tegangan teregulasi stabil `+5V` untuk menyuplai pin `VIN` ESP32 dengan efisiensi konversi tinggi ($>90\%$).
+   - **Sakelar Beban Daya Terkendali (Q1 - IRLZ44NPBF & U1):** Transistor MOSFET N-channel tipe logic-level yang dapat memutus atau mengalirkan daya ke terminal beban eksternal (Power Out U1) secara otomatis berdasarkan instruksi firmware.
+
+3. **Array Antarmuka Sensor & Jam Waktu Nyata:**
+   - **Konektor Anemometer (CN1 - XH2.54 3-Pin):** Pinout VCC, Signal (GPIO 27), GND.
+   - **Konektor Suhu & Kelembapan DHT22 (CN3 - XH2.54 3-Pin):** Pinout VCC, Data (GPIO 4), GND.
+   - **Konektor Intensitas Cahaya BH1750 (CN4 - XH2.54 4-Pin):** Pinout VCC, SCL (GPIO 22), SDA (GPIO 21), GND.
+   - **Modul RTC DS3231 (RTC1):** Modul jam presisi tinggi berbasis osilator terkompensasi suhu (TCXO) dengan backup baterai koin CR2032 terhubung paralel pada bus I2C.
+   - **Modul Pembaca MicroSD (SD1):** Modul penyimpanan data lokal SPI kecepatan tinggi.
+
+---
+
+### 3.8 Desain Tata Letak PCB dan Fabrikasi Papan Sirkuit (PCB Layout & Layer Routing)
+Papan sirkuit cetak (*Printed Circuit Board / PCB*) dirancang dengan standar industri 2 lapis (*double-sided PCB*) untuk menjamin keandalan mekanis dan integritas sinyal di lingkungan luar ruangan.
+
+![Tata Letak Komponen dan Jalur PCB Sisi Atas](assets/hw_02_pcb_top_layout.png)
+*Gambar 3.3: Tata Letak Komponen dan Jalur Tembaga Sisi Atas (Top Copper & Silkscreen) PCB Stasiun Cuaca Agrinex.*
+
+![Jalur Tembaga dan Ground Plane PCB Sisi Bawah](assets/hw_03_pcb_bottom_routing.png)
+*Gambar 3.4: Jalur Tembaga dan Bidang Referensi Ground (Bottom Copper & Ground Pour) PCB Stasiun Cuaca Agrinex.*
+
+![Diagram Penempatan Komponen Fisik PCB](assets/hw_04_pcb_component_placement.png)
+*Gambar 3.5: Diagram Penempatan Komponen Fisik (Component Placement / Silkscreen Outline) PCB Stasiun Cuaca Agrinex.*
+
+Fitur rancang bangun PCB stasiun cuaca Agrinex meliputi:
+1. **Pemisahan Jalur Daya dan Jalur Sinyal (*Power & Signal Segregation*):**
+   Jalur tembaga pembawa arus besar dari panel surya, modul charger TP5000, baterai, dan boost converter TPS61088 dirancang dengan lebar jejak (*trace width*) ekstra lebar ($> 1.5\text{ mm}$) pada lapisan atas untuk meminimalkan resistansi jalur dan mencegah kenaikan suhu papan.
+2. **Bidang Ground Plane Luas (*Solid Ground Pour*):**
+   Lapisan bawah PCB didominasi oleh bidang tembaga ground referensi kontinu. Bidang ground ini berfungsi sebagai perisai pelindung (*electromagnetic shielding*) terhadap derau induktif frekuensi tinggi serta menyediakan jalur arus balik berimpedansi sangat rendah bagi sirkuit digital ESP32 dan pulsa anemometer.
+3. **Konektor Berstandar Industri:**
+   - Jalur kabel daya luar ruangan (Panel Surya U5, Baterai U4, dan Beban U1) menggunakan terminal blok baut kencang berjarak $5.08\text{ mm}$ (tipe TB007-508-02BE) yang kokoh dan tahan terhadap getaran angin di tiang penyangga.
+   - Seluruh koneksi sensor eksternal (Anemometer CN1, DHT22 CN3, BH1750 CN4) menggunakan header soket wafer berkunci JST-XH $2.54\text{ mm}$ yang mencegah kesalahan polaritas saat perakitan di lapangan.
+4. **Tanda Hak Cipta dan Identitas Akademik Silkscreen:**
+   Lapisan silkscreen PCB secara resmi mencantumkan identitas lisensi riset akademik pada bagian bawah papan: *"Weather Station 2026, Copyright Universitas Kuningan, 2026"*.
+
+---
+
+### 3.9 Daftar Komponen Fisik dan Bill of Materials (BOM)
+Seluruh komponen perangkat keras yang terpasang pada papan sirkuit utama stasiun cuaca Agrinex tercatat secara sistematis dalam daftar kebutuhan komponen (*Bill of Materials / BOM*).
+
+![Tabel Bill of Materials Hardware PCB](assets/hw_05_bill_of_materials.png)
+*Gambar 3.6: Tabel Resmi Bill of Materials (BOM) Fabrikasi Hardware PCB Stasiun Cuaca Agrinex.*
+
+Tabel 3.2 merinci 14 jenis komponen fisik yang digunakan beserta referensi nomor part pabrikan dan kode pemesanan industri:
+
+| No. | Jumlah | Komponen / Nilai | Designator | Footprint / Paket | Spesifikasi & Produsen | Referensi Part Supplier |
+| :---: | :---: | :--- | :---: | :--- | :--- | :--- |
+| 1 | 1 | Kapasitor Elektrolit 470 µF | C2 | CAP-TH 10.0mm Pitch 5.0mm | 470 µF 63V Low-ESR (Econd PH471M063G200B000) | LCSC C51953331 |
+| 2 | 1 | Konektor Anemometer (3-Pin) | CN1 | CONN-TH Wafer XH2.54-3P | Konektor Wafer Vertikal 2.54mm (XUNPU) | LCSC C22390468 |
+| 3 | 1 | Konektor DHT22 (3-Pin) | CN3 | CONN-TH Wafer XH2.54-3P | Konektor Wafer Vertikal 2.54mm (XUNPU) | LCSC C22390468 |
+| 4 | 1 | Konektor BH1750 (4-Pin) | CN4 | CONN-TH Wafer XH2.54-4P | Konektor Wafer Vertikal 2.54mm (XUNPU) | LCSC C22390479 |
+| 5 | 1 | Modul Sensor Daya INA226 | I1 | Modul INA226 Breakout | 16-bit High-Side Current & Power Monitor I2C | LCSC / Module |
+| 6 | 1 | Transistor MOSFET Daya N-CH | Q1 | TO-220-3 Through-Hole | IRLZ44NPBF Logic-Level N-Channel 55V 47A (Infineon) | LCSC C38774 |
+| 7 | 3 | Resistor 4.7 kΩ (1/8W) | R1, R3, R4 | RES-TH Metal Film Pitch 7.7mm | 4.7 kΩ ±5% 0.125W Through-Hole (VO CR1/8W-39K) | LCSC Resistor |
+| 8 | 2 | Resistor 10 kΩ (1/8W) | R2, R5 | RES-TH Metal Film Pitch 7.7mm | 10 kΩ ±5% 0.125W Through-Hole (VO CR1/8W-39K) | LCSC Resistor |
+| 9 | 1 | Modul RTC DS3231 Presisi | RTC1 | Modul RTC DS3231 Header | I2C RTC TCXO Presisi Tinggi dengan Backup CR2032 | Arduino DS3231 |
+| 10 | 1 | Modul Pembaca MicroSD SPI | SD1 | Modul TF-Card Reader SPI | Modul SPI High-Speed MicroSD Card (GREATZT) | AliExpress / LCSC |
+| 11 | 3 | Terminal Blok Baut 2-Pin | U1, U4, U5 | CONN-TH 2-Pin Pitch 5.08mm | Terminal Blok Baut TB007-508-02BE 16A 300V (CUI) | LCSC C3816270 |
+| 12 | 1 | Modul Boost Converter 5V | U2 | Modul TPS61088 Step-Up | Synchronous Boost Converter High-Efficiency 5V | Module TPS61088 |
+| 13 | 1 | Mikrokontroler ESP32 | U3 | Modul ESP-WROOM-32 30-Pin | Dual-Core 32-bit Xtensa LX6 240 MHz, 4MB Flash | Espressif Systems |
+| 14 | 1 | Modul Charger Baterai Surya | U6 | Modul TP5000 Type-C | Charger Baterai LiFePO4 Switch-Mode CC/CV 3.6V | Module TP5000 |
+
+---
+
 ## 4. Arsitektur Firmware dan Embedded Real-Time Operating System (FreeRTOS)
 
 ### 4.1 Paradigma Pengembangan Firmware & PlatformIO Dual-Environment Matrix
