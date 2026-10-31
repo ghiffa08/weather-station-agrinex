@@ -16,14 +16,14 @@ export interface LocationItem {
 }
 
 export const DEFAULT_LOCATION: LocationItem = {
-  adm4: '32.08.09.1002',
+  adm4: '32.08.09.1006',
   province: 'Jawa Barat',
   district: 'Kabupaten Kuningan',
   subdistrict: 'Kecamatan Kuningan',
-  village: 'Kelurahan Kuningan',
-  latitude: -6.9788,
-  longitude: 108.4771,
-  elevation_m: 560,
+  village: 'Kelurahan Purwawinangun',
+  latitude: -6.9721,
+  longitude: 108.4801,
+  elevation_m: 555,
 };
 
 // Katalog Referensi Wilayah Populer (Hirarki Kabupaten, Kecamatan, Desa)

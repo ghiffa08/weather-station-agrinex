@@ -212,10 +212,10 @@ Konfigurasi stasiun tidak disimpan pada memori EEPROM terbatas, melainkan pada p
 
 ```json
 {
-  "station_name": "Kelurahan Kuningan, Kecamatan Kuningan",
-  "elevation_m": 560,
-  "latitude": -6.9788,
-  "longitude": 108.4842,
+  "station_name": "Kelurahan Purwawinangun, Kecamatan Kuningan",
+  "elevation_m": 555,
+  "latitude": -6.9721,
+  "longitude": 108.4801,
   "sensor_interval_sec": 15,
   "cal_temp_offset": -4.8,
   "cal_hum_offset": 14.0,

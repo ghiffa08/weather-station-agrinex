@@ -15,6 +15,7 @@ interface LocationSelectorModalProps {
 
 // Rekomendasi Wilayah Populer untuk Satu Klik Cepat
 const POPULAR_LOCATIONS: { label: string; adm4: string }[] = [
+  { label: 'Kel. Purwawinangun', adm4: '32.08.09.1006' },
   { label: 'Kuningan Kota', adm4: '32.08.09.1002' },
   { label: 'Kel. Cijoho', adm4: '32.08.09.1005' },
   { label: 'Kadugede', adm4: '32.08.01.2001' },

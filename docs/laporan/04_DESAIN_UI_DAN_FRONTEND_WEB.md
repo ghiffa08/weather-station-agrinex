@@ -117,7 +117,7 @@ Dashboard utama merupakan pusat kendali operasional yang menyajikan telemetri mi
 
 ### Spesifikasi Rinci Modul-Modul Dashboard:
 1. **Header Stasiun & LiveClock Presisi:**  
-   Menyajikan identitas administratif stasiun cuaca ("Kelurahan Kuningan, Kecamatan Kuningan"), koordinat lintang dan bujur, elevasi rujukan topografis (560 mdpl), serta penunjuk waktu nyata (*LiveClock*) dengan presisi detik yang disinkronkan secara periodik terhadap NTP server dan modul RTC DS3231 internal. Pada sisi kanan header disematkan tombol menu navigasi responsif untuk berpindah secara mulus ke tab Analitik dan Pengaturan.
+   Menyajikan identitas administratif stasiun cuaca ("Kelurahan Purwawinangun, Kecamatan Kuningan"), koordinat lintang dan bujur, elevasi rujukan topografis (555 mdpl), serta penunjuk waktu nyata (*LiveClock*) dengan presisi detik yang disinkronkan secara periodik terhadap NTP server dan modul RTC DS3231 internal. Pada sisi kanan header disematkan tombol menu navigasi responsif untuk berpindah secara mulus ke tab Analitik dan Pengaturan.
 
 2. **Indikator Aliran Data Ganda (*Dual-Stream Telemetry Engine*):**  
    Menampilkan metrik performa komunikasi jaringan berupa waktu bolak-balik transmisi data (*Round-Trip Time / RTT*) secara instan. Pada koneksi LAN/Wi-Fi lokal melalui mekanisme HTTP polling langsung ke mikrokontroler, indikator menunjukkan latensi sangat rendah (rata-rata 64 ms) dengan lencana hijau `Local REST`. Tombol toggle interaktif memungkinkan operator beralih ke mode `Cloud Stream` (Firestore WAN dengan latensi rata-rata 742 ms) saat melakukan pemantauan jarak jauh dari luar area perkebunan.

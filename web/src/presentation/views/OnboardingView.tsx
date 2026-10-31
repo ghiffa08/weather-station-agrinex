@@ -29,10 +29,10 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSk
   const totalSteps = 5;
 
   // Configuration state
-  const [stationName, setStationName] = useState<string>(() => localStorage.getItem('agrinex_station_name') || 'Stasiun Cuaca Agrinex #1');
+  const [stationName, setStationName] = useState<string>(() => localStorage.getItem('agrinex_station_name') || 'Stasiun Purwawinangun (ESP32-01)');
   const [elevation, setElevation] = useState<number>(() => {
     const saved = localStorage.getItem('agrinex_station_elevation');
-    return saved ? Number(saved) : 560;
+    return saved ? Number(saved) : 555;
   });
   const [selectedBoard, setSelectedBoard] = useState<BoardType>('esp32');
   const [wifiSsid, setWifiSsid] = useState<string>('WiFi 2');
@@ -242,7 +242,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSk
                     type="text"
                     value={stationName}
                     onChange={(e) => setStationName(e.target.value)}
-                    placeholder="Stasiun Cuaca #1"
+                    placeholder="Stasiun Purwawinangun (ESP32-01)"
                     className="w-full bg-transparent text-xs text-gray-900 focus:outline-none"
                   />
                 </div>
@@ -257,7 +257,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({ onComplete, onSk
                     type="number"
                     value={elevation}
                     onChange={(e) => setElevation(Number(e.target.value))}
-                    placeholder="560"
+                    placeholder="555"
                     className="w-full bg-transparent text-xs text-gray-900 focus:outline-none font-mono"
                   />
                   <span className="text-[10px] font-bold text-gray-500">mdpl</span>

@@ -46,8 +46,8 @@ Berdasarkan latar belakang tersebut, rumusan masalah dalam penelitian rekayasa i
 Batasan masalah dalam penelitian terapan ini ditetapkan sebagai berikut:
 1. Unit pemroses utama menggunakan mikrokontroler **ESP32 DevKit v1** (Xtensa dual-core 240 MHz) dengan dukungan kompilasi cadangan untuk **NodeMCU v2 (ESP8266)**.
 2. Parameter cuaca yang diukur meliputi suhu udara dan kelembapan relatif (**DHT22**), intensitas radiasi iluminansi cahaya (**BH1750**), kecepatan angin horizontal (**Anemometer v1.3 optocoupler**), waktu jam nyata (**RTC DS3231**), serta tegangan, arus, dan daya baterai (**INA226**).
-3. Pengujian komparasi lapangan dilakukan di Kecamatan Cilimus, Kabupaten Kuningan pada elevasi 560 mdpl selama siklus pengamatan intensif 24 jam terhadap data model BMKG Pos Pengamatan Agroklimat Kuningan / Stasiun Kertajati.
-4. Perhitungan laju evapotranspirasi acuan menggunakan model standar **FAO-56 Penman-Monteith** dengan penyesuaian tekanan barometrik spesifik elevasi 560 mdpl.
+3. Pengujian komparasi lapangan dilakukan di Kelurahan Purwawinangun, Kecamatan Kuningan, Kabupaten Kuningan pada elevasi 555 mdpl selama siklus pengamatan intensif 24 jam terhadap data model BMKG Pos Pengamatan Agroklimat Kuningan / Stasiun Kertajati.
+4. Perhitungan laju evapotranspirasi acuan menggunakan model standar **FAO-56 Penman-Monteith** dengan penyesuaian tekanan barometrik spesifik elevasi 555 mdpl.
 
 ### 2.4 Tujuan dan Manfaat Riset
 Tujuan yang dicapai melalui penelitian rekayasa ini meliputi:
@@ -399,7 +399,7 @@ Dashboard utama merupakan pusat kendali operasional yang menyajikan telemetri mi
 ![Tampilan Dashboard Utama Telemetri](assets/ui_03_dashboard_overview.png)
 *Gambar 6.3: Tampilan Dashboard Utama Telemetri Real-Time Stasiun Cuaca Agrinex.*
 
-*   **Header Stasiun & LiveClock Presisi:** Menyajikan identitas administratif stasiun cuaca ("Kelurahan Kuningan, Kecamatan Kuningan"), koordinat lintang dan bujur, elevasi rujukan topografis (560 mdpl), serta penunjuk waktu nyata (*LiveClock*) dengan presisi detik yang disinkronkan secara periodik terhadap NTP server dan modul RTC DS3231 internal. Pada sisi kanan header disematkan tombol menu navigasi responsif untuk berpindah secara mulus ke tab Analitik dan Pengaturan.
+*   **Header Stasiun & LiveClock Presisi:** Menyajikan identitas administratif stasiun cuaca ("Kelurahan Purwawinangun, Kecamatan Kuningan"), koordinat lintang dan bujur, elevasi rujukan topografis (555 mdpl), serta penunjuk waktu nyata (*LiveClock*) dengan presisi detik yang disinkronkan secara periodik terhadap NTP server dan modul RTC DS3231 internal. Pada sisi kanan header disematkan tombol menu navigasi responsif untuk berpindah secara mulus ke tab Analitik dan Pengaturan.
 *   **Indikator Aliran Data Ganda (*Dual-Stream Telemetry Engine*):** Menampilkan metrik performa komunikasi jaringan berupa waktu bolak-balik transmisi data (*Round-Trip Time / RTT*) secara instan. Pada koneksi LAN/Wi-Fi lokal melalui mekanisme HTTP polling langsung ke mikrokontroler, indikator menunjukkan latensi sangat rendah (rata-rata 64 ms) dengan lencana hijau `Local REST`. Tombol toggle interaktif memungkinkan operator beralih ke mode `Cloud Stream` (Firestore WAN dengan latensi rata-rata 742 ms) saat melakukan pemantauan jarak jauh dari luar area perkebunan.
 *   **Termometer Melingkar Neumorphic (*ArcGauge*):** Komponen visualisasi suhu udara utama yang menggunakan busur lingkaran grafis vektor dinamis 270 derajat (SVG path interpolation). Menampilkan jarum penunjuk virtual dan gradasi warna latar belakang yang bertransisi halus: hijau sejuk ($<24^\circ\text{C}$), kuning hangat ($24 - 32^\circ\text{C}$), hingga merah menyengat ($>32^\circ\text{C}$). Di tengah busur ditampilkan nilai numerik suhu ambien dengan ketelitian 1 desimal, lengkap dengan label status kenyamanan iklim mikro tajuk tanaman ("Normal").
 *   **Kartu Pemantau Catu Daya LiFePO4 (*BatteryCard*):** Mengintegrasikan telemetri sistem daya otonom stasiun secara menyeluruh berbasis pengukuran IC sensor INA226. Menyajikan indikator persentase kapasitas baterai (*State of Charge / SoC*) menggunakan algoritma tabel pemetaan tegangan sel LiFePO4 non-linear, nilai tegangan sel riil (misal: $3.55\text{ V}$, rentang aman $2.8\text{ V} - 3.65\text{ V}$), sisa kapasitas arus terukur terhadap kapasitas nominal ($30\text{ Ah}$), arus pengisian dari panel surya 50Wp atau beban sistem ($mA$), serta estimasi durasi otonomi baterai (*time-to-empty / time-to-full*).
@@ -606,7 +606,7 @@ Pengujian otomatis menggunakan headless browser Chromium membuktikan ketahanan a
 *   **Retensi Flag Onboarding:** Flag `agrinex_onboarding_completed = true` bertahan utuh tanpa memicu wizard berulang.
 
 ### 7.4 Hasil Validasi Lapangan 24 Jam Komparatif vs Data Rujukan BMKG Kuningan
-Pengujian lapangan dilaksanakan pada koordinat 6°53'42" LS, 108°29'18" BT (Kecamatan Cilimus, Kabupaten Kuningan, elevasi 560 mdpl) selama 24 jam pengamatan cuaca:
+Pengujian lapangan dilaksanakan pada koordinat 6°58'20" LS, 108°28'48" BT (Kelurahan Purwawinangun, Kecamatan Kuningan, Kabupaten Kuningan, elevasi 555 mdpl) selama 24 jam pengamatan cuaca:
 
 ![Validasi Komparatif Data Telemetri Lapangan 24 Jam vs Model BMKG](assets/fig_03_field_vs_bmkg_validation.png)
 *Gambar 7.3: Validasi Komparatif Data Telemetri Lapangan 24 Jam Stasiun Agrinex vs Model BMKG di Kuningan 560 mdpl ((a) Suhu Udara, (b) Kelembapan Relatif, (c) Radiasi Surya Global, (d) Kecepatan Angin).*

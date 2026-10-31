@@ -21,7 +21,7 @@ Pengujian menyeluruh (*comprehensive verification and validation*) dilakukan unt
    - Pengukuran latensi bolak-balik (*Round Trip Time / RTT*) HTTP REST API lokal versus Cloud Firestore REST API.
    - Pengujian stres ketahanan sesi pengguna (*anti-logout stress test*) menggunakan otomasi headless browser 100 siklus refresh berurutan.
 4. **Level 4: Field Validation & Environmental Benchmark**
-   - Pengujian komparasi stasiun meteorologi di lapangan terbuka (Kecamatan Cilimus, Kabupaten Kuningan, elevasi 560 mdpl) terhadap data observasi stasiun pembanding BMKG Jawa Barat selama periode pemantauan intensif 24 jam.
+   - Pengujian komparasi stasiun meteorologi di lapangan terbuka (Kelurahan Purwawinangun, Kecamatan Kuningan, Kabupaten Kuningan, elevasi 555 mdpl) terhadap data observasi stasiun pembanding BMKG Jawa Barat selama periode pemantauan intensif 24 jam.
 
 ---
 

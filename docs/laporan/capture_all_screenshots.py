@@ -44,7 +44,7 @@ def capture_all():
                 email: 'admin@agrinex.id',
                 displayName: 'Haikal Jibran Al-Ghiffarry',
                 role: 'Administrator',
-                stationAccess: 'Stasiun Kuningan (ESP32-01)',
+                stationAccess: 'Stasiun Purwawinangun (ESP32-01)',
                 loginTime: new Date().toISOString(),
                 isDemo: false
             };
@@ -55,10 +55,11 @@ def capture_all():
             };
             localStorage.setItem('agrinex_auth_session', JSON.stringify(session));
             localStorage.setItem('agrinex_auth_user', JSON.stringify(adminUser));
-            localStorage.removeItem('agrinex_onboarding_completed');
+            localStorage.setItem('agrinex_onboarding_completed', 'false');
         }""")
-        page.goto(TARGET_URL)
-        time.sleep(2)
+        page.goto(TARGET_URL + "/?view=onboarding")
+        page.wait_for_selector('text=Profil Stasiun', timeout=10000)
+        time.sleep(1)
         p2 = os.path.join(ASSETS_DIR, "ui_02_onboarding_wizard.png")
         page.screenshot(path=p2, full_page=False)
         print(f"[OK] 02 Onboarding Wizard: {p2}")

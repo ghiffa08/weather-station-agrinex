@@ -261,7 +261,7 @@ class AuthServiceClass {
           email: cleanEmail,
           displayName: autoRole === 'Administrator' ? 'Haikal Jibran Al-Ghiffarry (Admin)' : 'Petugas Lapang Agrinex',
           role: autoRole,
-          stationAccess: 'Stasiun Kuningan (ESP32-01)',
+          stationAccess: 'Stasiun Purwawinangun (ESP32-01)',
           loginTime: new Date().toISOString(),
           isDemo: false,
         };
@@ -294,7 +294,7 @@ class AuthServiceClass {
       email: raw.includes('@') ? raw : `${autoRole.toLowerCase().replace(/\s+/g, '.')}@agrinex.id`,
       displayName: autoRole === 'Administrator' ? 'Haikal Jibran Al-Ghiffarry' : (autoRole === 'Agronomist' ? 'Dr. Ir. Hendrawan' : 'Budi Santoso (Field Team)'),
       role: autoRole,
-      stationAccess: 'Stasiun Kuningan (ESP32-01)',
+      stationAccess: 'Stasiun Purwawinangun (ESP32-01)',
       loginTime: new Date().toISOString(),
       isDemo: true,
     };
@@ -316,7 +316,11 @@ class AuthServiceClass {
   }
 
   public isOnboardingCompleted(): boolean {
-    if (localStorage.getItem(STORAGE_KEY_ONBOARDING) === 'true') {
+    const val = localStorage.getItem(STORAGE_KEY_ONBOARDING);
+    if (val === 'false') {
+      return false;
+    }
+    if (val === 'true') {
       return true;
     }
     // Jika sudah ada user login atau ada session tersimpan, otomatis anggap selesai

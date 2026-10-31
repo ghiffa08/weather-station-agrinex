@@ -29,10 +29,10 @@ export function App() {
     return AuthService.isOnboardingCompleted();
   });
 
-  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'settings'>(() => {
+  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'settings' | 'onboarding'>(() => {
     try {
       const param = new URLSearchParams(window.location.search).get('view');
-      if (param === 'analytics' || param === 'settings') return param;
+      if (param === 'analytics' || param === 'settings' || param === 'onboarding') return param;
     } catch {
       // ignore
     }
@@ -61,9 +61,8 @@ export function App() {
     );
   }
 
-  // 2. Flow: Jika belum pernah onboarding atau membuka manual wizard, tampilkan OnboardingView
-  // 2. Flow: Tampilkan OnboardingView HANYA satu kali saja saat stasiun belum disetup
-  if (!isOnboardingCompleted) {
+  // 2. Flow: Jika belum pernah onboarding atau membuka manual wizard via ?view=onboarding, tampilkan OnboardingView
+  if (!isOnboardingCompleted || currentView === 'onboarding') {
     return (
       <OnboardingView
         onComplete={() => {
