@@ -95,11 +95,35 @@ def set_table_styling(table, num_cols):
                 cell.width = Inches(col_widths[idx])
             set_cell_vertical_align(cell, 'center')
 
+def clean_math(math_str):
+    s = math_str.strip('$').strip()
+    s = s.replace(r'\Delta T', 'ΔT').replace(r'\Delta RH', 'ΔRH').replace(r'\Delta', 'Δ')
+    s = re.sub(r'\^\\circ\\text\{C\}', '°C', s)
+    s = re.sub(r'\^\\circ C', '°C', s)
+    s = re.sub(r'\^\\circ', '°', s)
+    s = re.sub(r'\\text\{([^}]+)\}', r'\1', s)
+    s = s.replace(r'\times', '×').replace(r'\approx', '≈').replace(r'\pm', '±')
+    s = s.replace(r'\le', '≤').replace(r'\ge', '≥')
+    s = s.replace(r'\gamma', 'γ').replace(r'\mu', 'μ').replace(r'\sigma', 'σ')
+    s = s.replace(r'\implies', ' ⟹ ')
+    return s
+
+def clean_markdown_links(text):
+    def repl(m):
+        label, url = m.groups()
+        if label == url or label.startswith('http'):
+            return url
+        return f"{label} ({url})"
+    return re.sub(r'\[([^\]]+)\]\((https?://[^)]+)\)', repl, text)
+
 def format_inline_markdown(paragraph, text, base_font_name='Times New Roman', base_font_size=12, base_color=RGBColor(0,0,0), force_bold=False):
+    # Pre-clean escaped characters and links
     text = text.replace(r'\_', '_').replace(r'\*', '*')
-    
-    # Simple regex-based tokenization for `code`, **bold**, *italic*, and latex $formula$
-    pattern = re.compile(r'(`[^`]+`|\$\$.*?\$\$|\$.*?\$|\*\*[^*]+\*\*|\*[^*]+\*)')
+    text = clean_markdown_links(text)
+
+    # Robust regex tokenization for code, math, bold, italic
+    # Order matters: `code`, $$math$$, $math$, **bold**, *italic*
+    pattern = re.compile(r'(`[^`]+`|\$\$.*?\$\$|\$.*?\$|\*\*[^*]+?\*\*|\*[^*\n]+?\*)')
     tokens = pattern.split(text)
 
     for token in tokens:
@@ -114,13 +138,11 @@ def format_inline_markdown(paragraph, text, base_font_name='Times New Roman', ba
             run.text = token[1:-1]
             run.font.name = 'Consolas'
             run.font.size = Pt(base_font_size - 1.5)
-            run.font.color.rgb = RGBColor(30, 41, 59)
+            run.font.color.rgb = RGBColor(15, 23, 42)
             if force_bold:
                 run.bold = True
         elif (token.startswith('$$') and token.endswith('$$')) or (token.startswith('$') and token.endswith('$')):
-            # Clean math formatting for Word
-            content = token.strip('$').strip()
-            run.text = content
+            run.text = clean_math(token)
             run.italic = True
             run.font.name = 'Cambria Math'
         elif token.startswith('**') and token.endswith('**'):
@@ -136,7 +158,7 @@ def format_inline_markdown(paragraph, text, base_font_name='Times New Roman', ba
             if force_bold:
                 run.bold = True
 
-def add_styled_paragraph(doc, text, space_after=6, line_spacing=1.5, align=WD_ALIGN_PARAGRAPH.JUSTIFY, left_indent=0.0, first_indent=0.0):
+def add_styled_paragraph(doc, text, space_after=6, line_spacing=1.5, align=WD_ALIGN_PARAGRAPH.JUSTIFY, left_indent=0.0, first_indent=0.0, prefix=None, prefix_bold=True):
     p = doc.add_paragraph()
     p.alignment = align
     p.paragraph_format.space_before = Pt(0)
@@ -144,8 +166,14 @@ def add_styled_paragraph(doc, text, space_after=6, line_spacing=1.5, align=WD_AL
     p.paragraph_format.line_spacing = line_spacing
     if left_indent > 0:
         p.paragraph_format.left_indent = Inches(left_indent)
-    if first_indent > 0:
+    if first_indent != 0.0:
         p.paragraph_format.first_line_indent = Inches(first_indent)
+
+    if prefix:
+        r_pre = p.add_run(prefix)
+        r_pre.font.name = 'Times New Roman'
+        r_pre.font.size = Pt(12)
+        r_pre.bold = prefix_bold
 
     format_inline_markdown(p, text, base_font_name='Times New Roman', base_font_size=12)
     return p
@@ -168,7 +196,7 @@ def build_cover_page(doc, logo_path):
     p_title.paragraph_format.line_spacing = 1.15
     r = p_title.add_run("RANCANG BANGUN SISTEM STASIUN CUACA AGROMETEOROLOGI BERBASIS MULTI-SENSOR DAN DUAL-CONTROLLER TERINTEGRASI REST API LOKAL SERTA CLOUD FIRESTORE DENGAN MODEL EVAPOTRANSPIRASI FAO-56 PENMAN-MONTEITH")
     r.font.name = 'Times New Roman'
-    r.font.size = Pt(15)
+    r.font.size = Pt(14)
     r.bold = True
 
     if os.path.exists(logo_path):
@@ -286,9 +314,9 @@ def export_markdown_to_docx(md_path, docx_path, logo_path):
         raw_line = lines[i].rstrip('\r\n')
         line = raw_line.strip()
 
-        # Skip markdown cover lines until section 1 starts
+        # Skip markdown cover header text until section 1 starts
         if skip_header:
-            if line.startswith('## BAB 1') or line.startswith('## 1.'):
+            if line.startswith('## 1.') or line.startswith('## BAB 1'):
                 skip_header = False
             else:
                 i += 1
@@ -361,10 +389,8 @@ def export_markdown_to_docx(md_path, docx_path, logo_path):
         elif in_table:
             # End of table, process it
             in_table = False
-            # Parse table_lines
             valid_rows = []
             for tl in table_lines:
-                # Skip separator lines like |---|---|
                 parts = [p.strip() for p in tl.split('|')[1:-1]]
                 if all(re.match(r'^:?-+:?$', p) for p in parts if p):
                     continue
@@ -390,7 +416,7 @@ def export_markdown_to_docx(md_path, docx_path, logo_path):
                             cp.alignment = WD_ALIGN_PARAGRAPH.CENTER
                             format_inline_markdown(cp, val, base_font_size=10, force_bold=True)
                         else:
-                            cp.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                            cp.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                             format_inline_markdown(cp, val, base_font_size=10)
 
                 p_after_tbl = doc.add_paragraph()
@@ -400,6 +426,7 @@ def export_markdown_to_docx(md_path, docx_path, logo_path):
         img_match = re.match(r'^!\[(.*?)\]\((.*?)\)$', line)
         if img_match:
             caption, img_rel_path = img_match.groups()
+            img_rel_path = img_rel_path.lstrip('./')
             img_full_path = os.path.join(base_dir, img_rel_path)
             if not os.path.exists(img_full_path):
                 img_full_path = os.path.join(base_dir, 'assets', os.path.basename(img_rel_path))
@@ -412,12 +439,21 @@ def export_markdown_to_docx(md_path, docx_path, logo_path):
                 r_img = p_img.add_run()
                 r_img.add_picture(img_full_path, width=Inches(5.2))
 
-                if caption:
+                # Look ahead: if next line is an italic caption like *Gambar X.Y: ...*, use it and skip that line
+                next_caption = ""
+                if i + 1 < len(lines):
+                    next_line = lines[i + 1].strip()
+                    if next_line.startswith('*Gambar') or next_line.startswith('*Figura') or next_line.startswith('_Gambar'):
+                        next_caption = next_line.strip('*_ ')
+                        i += 1  # Skip next line so it is not rendered twice
+
+                final_caption = next_caption if next_caption else caption
+                if final_caption:
                     p_cap = doc.add_paragraph()
                     p_cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     p_cap.paragraph_format.space_before = Pt(2)
                     p_cap.paragraph_format.space_after = Pt(10)
-                    r_cap = p_cap.add_run(caption)
+                    r_cap = p_cap.add_run(final_caption)
                     r_cap.font.name = 'Times New Roman'
                     r_cap.font.size = Pt(10)
                     r_cap.italic = True
@@ -474,16 +510,61 @@ def export_markdown_to_docx(md_path, docx_path, logo_path):
             i += 1
             continue
 
-        # Lists: numbered or unordered
-        list_match = re.match(r'^(\*|-|\d+\.)\s+(.*)$', line)
-        if list_match:
-            bullet_sym, item_text = list_match.groups()
-            add_styled_paragraph(doc, f"{bullet_sym} {item_text}", space_after=4, left_indent=0.35, first_indent=-0.2)
+        # Sub-list items: indented by 2 or 4 spaces with dash or bullet
+        # e.g., "    - **Tingkat 1 - Administrator:** ..."
+        sub_list_match = re.match(r'^(?: {2,6}|\t)(?:\*|-)\s+(.*)$', raw_line)
+        if sub_list_match:
+            item_text = sub_list_match.group(1).strip()
+            add_styled_paragraph(
+                doc,
+                item_text,
+                space_after=3,
+                line_spacing=1.5,
+                align=WD_ALIGN_PARAGRAPH.JUSTIFY,
+                left_indent=0.55,
+                first_indent=-0.22,
+                prefix="–   ",
+                prefix_bold=False
+            )
             i += 1
             continue
 
-        # Regular paragraph
-        add_styled_paragraph(doc, line, space_after=6, line_spacing=1.5, align=WD_ALIGN_PARAGRAPH.JUSTIFY)
+        # Top-level list items: bullet (*, -) or numbered (1., 2.)
+        list_match = re.match(r'^(\*|-|(\d+)\.)\s+(.*)$', line)
+        if list_match:
+            bullet_sym = list_match.group(1)
+            num_idx = list_match.group(2)
+            item_text = list_match.group(3).strip()
+
+            if num_idx:
+                prefix = f"{num_idx}.  "
+            else:
+                prefix = "•   "
+
+            add_styled_paragraph(
+                doc,
+                item_text,
+                space_after=4,
+                line_spacing=1.5,
+                align=WD_ALIGN_PARAGRAPH.JUSTIFY,
+                left_indent=0.28,
+                first_indent=-0.28,
+                prefix=prefix,
+                prefix_bold=True
+            )
+            i += 1
+            continue
+
+        # Regular body paragraph: strictly JUSTIFIED
+        add_styled_paragraph(
+            doc,
+            line,
+            space_after=6,
+            line_spacing=1.5,
+            align=WD_ALIGN_PARAGRAPH.JUSTIFY,
+            left_indent=0.0,
+            first_indent=0.0
+        )
         i += 1
 
     print(f"Saving compiled document to: {docx_path}")

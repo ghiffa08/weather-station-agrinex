@@ -4,23 +4,21 @@
 
 ## 1. Identitas Peneliti dan Lembaga Akademik
 
-```
-                    UNIVERSITAS KUNINGAN
-                   FAKULTAS ILMU KOMPUTER
-              PROGRAM STUDI S1 TEKNIK INFORMATIKA
-```
+Tabel 1.1 menyajikan profil peneliti dan atribut kelembagaan dalam riset stasiun cuaca agrometeorologi ini:
 
-*   **Nama Peneliti:** Haikal Jibran A. (Haikal Jibran Al-Ghiffarry)
-*   **Nomor Induk Mahasiswa (NIM):** 20240810005
-*   **Kelas:** TINFC-2024-01
-*   **Program Studi:** S1 Teknik Informatika
-*   **Fakultas:** Ilmu Komputer
-*   **Perguruan Tinggi:** Universitas Kuningan
-*   **Tahun Akademik:** 2026
-*   **Topik Kajian:** Sistem Tertanam (*Embedded System*), *Internet of Things* (IoT), Agrometeorologi Terapan, dan Arsitektur Komputasi Web Multiplatform
-*   **Lokasi Pengujian Lapangan:** Stasiun Riset Agrinex, Kabupaten Kuningan, Jawa Barat (Koordinat: 6°53'42" LS, 108°29'18" BT, Elevasi: 560 mdpl)
-*   **Repositori Kode Sumber:** [https://github.com/ghiffa08/weather-station-agrinex](https://github.com/ghiffa08/weather-station-agrinex)
-*   **Aplikasi Web Produksi (Vercel):** [https://web-vert-tau-abafcrdbgk.vercel.app](https://web-vert-tau-abafcrdbgk.vercel.app)
+| Parameter Atribut | Rincian Keterangan Akademik |
+| :--- | :--- |
+| **Nama Peneliti** | Haikal Jibran A. (Haikal Jibran Al-Ghiffarry) |
+| **Nomor Induk Mahasiswa (NIM)** | 20240810005 |
+| **Kelas** | TINFC-2024-01 |
+| **Program Studi** | S1 Teknik Informatika |
+| **Fakultas** | Fakultas Ilmu Komputer |
+| **Perguruan Tinggi** | Universitas Kuningan |
+| **Tahun Akademik** | 2026 |
+| **Topik Kajian Riset** | Sistem Tertanam (*Embedded System*), *Internet of Things* (IoT), Agrometeorologi Terapan, dan Arsitektur Komputasi Web Multiplatform |
+| **Lokasi Pengujian Lapangan** | Stasiun Riset Agrinex, Kabupaten Kuningan, Jawa Barat (Koordinat: 6°53'42" LS, 108°29'18" BT, Elevasi: 560 mdpl) |
+| **Repositori Kode Sumber** | https://github.com/ghiffa08/weather-station-agrinex |
+| **Aplikasi Web Produksi (Vercel)** | https://web-vert-tau-abafcrdbgk.vercel.app |
 
 ---
 
@@ -81,7 +79,7 @@ Keterangan parameter:
 *   $\gamma$: Konstanta psikrometrik [$\text{kPa/}^\circ\text{C}$].
 *   $0.408$: Faktor konversi radiasi energi ($\text{MJ/m}^2/\text{hari}$) menjadi ekuivalen kedalaman air ($\text{mm/hari}$), diturunkan dari inversi panas laten penguapan air ($\lambda \approx 2.45\text{ MJ/kg}$).
 
-![Dinamika Harian Evapotranspirasi Acuan FAO-56 ETo](./assets/fig_05_fao56_eto_diurnal.png)
+![Dinamika Harian Evapotranspirasi Acuan FAO-56 ETo](assets/fig_05_fao56_eto_diurnal.png)
 *Gambar 3.1: Dinamika Harian Laju Evapotranspirasi Acuan FAO-56 ($ET_0$) terhadap Fluks Radiasi Surya ($R_s$) dan Dinamika Suhu/Angin.*
 
 ### 3.2 Penurunan Komponen Matematis dan Penyesuaian Ketinggian Elevasi
@@ -578,7 +576,7 @@ Tab pengguna mengimplementasikan kontrol akses berbasis peran (*Role-Based Acces
 ### 7.1 Piramida Metodologi Pengujian Bertingkat
 Pengujian sistem dilakukan secara berjenjang mengikuti metodologi piramida rekayasa perangkat lunak dan sistem tertanam:
 
-![Piramida Metodologi Pengujian Bertingkat](./assets/fig_01_testing_pyramid.png)
+![Piramida Metodologi Pengujian Bertingkat](assets/fig_01_testing_pyramid.png)
 *Gambar 7.1: Hierarki Metodologi Pengujian dan Validasi Bertingkat (Verification & Validation Hierarchy).*
 
 1.  **Level 1 (Unit & Mathematical Verification):** Pengujian unit fungsi komputasi $ET_0$, konversi fluks radiasi Lux-$R_s$, faktor logaritmik angin $u_2$, dan parser JSON.
@@ -589,7 +587,7 @@ Pengujian sistem dilakukan secara berjenjang mengikuti metodologi piramida rekay
 ### 7.2 Uji Kinerja Komunikasi REST API Dual-Stream
 Pengujian dilakukan dengan mengirimkan 100 permintaan HTTP `GET /api/telemetry` secara berkala setiap 2 detik dari peramban web klien.
 
-![Distribusi Latensi REST API Dual-Stream](./assets/fig_02_rest_latency_distribution.png)
+![Distribusi Latensi REST API Dual-Stream](assets/fig_02_rest_latency_distribution.png)
 *Gambar 7.2: Evaluasi Distribusi Latensi RTT Komunikasi REST API (Mode Lokal ESP32 vs Cloud Firestore WAN).*
 
 | Parameter Kinerja | Mode Lokal (Direct ESP32 REST) | Mode Cloud (Firestore WAN via Vercel) | Evaluasi Komparatif |
@@ -610,7 +608,7 @@ Pengujian otomatis menggunakan headless browser Chromium membuktikan ketahanan a
 ### 7.4 Hasil Validasi Lapangan 24 Jam Komparatif vs Data Rujukan BMKG Kuningan
 Pengujian lapangan dilaksanakan pada koordinat 6°53'42" LS, 108°29'18" BT (Kecamatan Cilimus, Kabupaten Kuningan, elevasi 560 mdpl) selama 24 jam pengamatan cuaca:
 
-![Validasi Komparatif Data Telemetri Lapangan 24 Jam vs Model BMKG](./assets/fig_03_field_vs_bmkg_validation.png)
+![Validasi Komparatif Data Telemetri Lapangan 24 Jam vs Model BMKG](assets/fig_03_field_vs_bmkg_validation.png)
 *Gambar 7.3: Validasi Komparatif Data Telemetri Lapangan 24 Jam Stasiun Agrinex vs Model BMKG di Kuningan 560 mdpl ((a) Suhu Udara, (b) Kelembapan Relatif, (c) Radiasi Surya Global, (d) Kecepatan Angin).*
 
 #### Tabel Data Observasi Komparatif 24 Jam:
@@ -636,7 +634,7 @@ Pengujian lapangan dilaksanakan pada koordinat 6°53'42" LS, 108°29'18" BT (Kec
 ### 7.5 Uji Efisiensi Daya Panel Surya dan Kurva Pelucutan Baterai LiFePO4
 Uji otonomi daya mandiri dilakukan dengan melepaskan panel surya secara sengaja pada kapasitas baterai awal 100% ($3.45\text{ V}$) untuk mengukur ketahanan stasiun pada skenario cuaca hujan berkepanjangan:
 
-![Kurva Pelucutan Baterai LiFePO4 3.2V 30Ah](./assets/fig_04_lifepo4_discharge_curve.png)
+![Kurva Pelucutan Baterai LiFePO4 3.2V 30Ah](assets/fig_04_lifepo4_discharge_curve.png)
 *Gambar 7.4: Kurva Pelucutan Tegangan Sel Baterai LiFePO4 3.2V 30Ah Selama 11.3 Hari (272 Jam) Operasional Kontinu Tanpa Pengisian Surya.*
 
 *   **Hasil Pengujian Empiris:** Stasiun bertahan aktif dan mencatat data secara kontinu selama **11 hari 8 jam (272 jam)** sebelum mencapai tegangan pemutus aman (*low-voltage cut-off*) $2.80\text{ V}$.
