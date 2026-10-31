@@ -1,10 +1,10 @@
-# BAB IV: ARSITEKTUR FRONTEND, SISTEM UI NEUMORPHIC & MANAJEMEN AUTENTIKASI
+# BAB IV: DOKUMENTASI LENGKAP ANTARMUKA PENGGUNA (WEB UI), SISTEM NEUMORPHIC & MANAJEMEN AUTENTIKASI
 
 ---
 
 ## 4.1 Filosofi Desain Neumorphic Modern (Soft UI)
 
-Antarmuka pengguna (*User Interface / UI*) stasiun cuaca Agrinex dirancang secara khusus untuk kebutuhan observasi lapangan di lingkungan terbuka (*outdoor agricultural monitoring*). Sebagian besar aplikasi pemantauan modern menggunakan tema gelap (*dark mode*) yang sulit dibaca di bawah paparan sinar matahari terik, atau tema putih murni (`#ffffff`) yang menyilaukan mata dan melelahkan petani/agronomis.
+Antarmuka pengguna (*User Interface / UI*) stasiun cuaca Agrinex dirancang secara khusus untuk kebutuhan observasi lapangan di lingkungan terbuka (*outdoor agricultural monitoring*). Sebagian besar aplikasi pemantauan modern menggunakan tema gelap (*dark mode*) yang sulit dibaca di bawah paparan sinar matahari terik, atau tema putih murni (`#ffffff`) yang menyilaukan mata dan melelahkan operator/agronomis.
 
 Sistem Agrinex mengimplementasikan gaya **Neumorphic Modern (Soft UI)** dengan palet dasar abu-abu netral berkilau lembut (`#e6e9ef`):
 
@@ -45,124 +45,104 @@ web/src/
 │   └── useComparativeAnalytics.ts # Mesin Agregasi Komparasi BMKG & Statistik
 └── presentation/                # Presentation Layer (UI Components & Views)
     ├── components/
-    │   ├── neumorphic/          # Komponen Dasar (Card, Gauge, ChartWidget)
-    │   └── settings/            # Modul Pengaturan (Modules, Sync, Users)
-    └── views/                   # Tampilan Halaman (Dashboard, Analytics, Settings, Login, Onboarding)
+    │   ├── atomic/              # Atom & Molekul UI (LiveClock, MetricCard, Rows)
+    │   ├── dashboard/           # Modul Dashboard (Highlights, Extremes, LogTable)
+    │   ├── analytics/           # Modul Analitik (KPI Grid, AgroClimate Advisory)
+    │   ├── neumorphic/          # Komponen Neumorphic (ArcGauge, Card, ChartWidget)
+    │   └── settings/            # Modul Pengaturan (Modules, Sync, Users, Export)
+    └── views/                   # Tampilan Halaman Utama (Dashboard, Analytics, Settings, Login, Onboarding)
 ```
 
 ---
 
-## 4.3 Arsitektur Autentikasi & Kontrol Akses Berbasis Peran (RBAC)
+## 4.3 Layar 1: Formulir Autentikasi Kredensial Lapangan
 
-Antarmuka autentikasi stasiun cuaca direkayasa menggunakan pendekatan kartu tunggal ringkas (*compact single-card*, `max-w-xs`), berfokus pada efisiensi akses operasional lapangan dengan mematuhi standar keamanan perangkat lunak.
+Antarmuka login didesain dengan konsep kartu tunggal terpusat (*compact single-card*, `max-w-xs`), berfokus pada kecepatan otentikasi di lapangan dengan mematuhi prinsip keamanan informasi.
 
-![Tampilan Halaman Login Ultra-Minimalis](./assets/01_login_page.png)
+![Tampilan Halaman Login Ultra-Minimalis](./assets/ui_01_login_page.png)
+*Gambar 4.1: Antarmuka Login Kredensial Stasiun Cuaca Agrinex.*
 
-### 4.3.1 Spesifikasi Formulir Autentikasi & Proteksi Kredensial
-
-Dalam evaluasi rancang bangun antarmuka, subsistem formulir login mengimplementasikan parameter teknis berikut:
-
+### Spesifikasi Fitur Halaman Login:
 1. **Konfigurasi Input Kredensial Murni (*Zero-State Input Specification*):**  
    Elemen masukan `Email` dan `Kata Sandi` dikonfigurasi secara ketat tanpa teks contoh bawaan (`placeholder=""`) dan status awal komponen (*initial state*) diinisialisasi dalam bentuk string kosong (`''`). Penerapan isolasi masukan ini bertujuan mencegah kebocoran informasi (*information disclosure mitigation*) terkait struktur domain atau penamaan akun stasiun pada perangkat terminal lapangan yang digunakan secara bersama (*shared field devices*).
-
 2. **Mesin Deteksi Peran Otomatis (*Auto-Role Detection Engine*):**  
-   Untuk meminimalkan beban kognitif operator (*cognitive load reduction*) serta meniadakan kerentanan pemalsuan hak akses di sisi klien (*client-side role tampering*), antarmuka meniadakan pemilih peran manual. Penentuan hak akses (*Role-Based Access Control / RBAC*) dieksekusi secara otomatis dan deterministik saat kredensial divalidasi oleh sistem:
-   - **Kredensial Administratif (`admin`, `ghiffa`, atau `haikal`):**  
-     $\implies$ Diberikan hak **Administrator** (Akses penuh ke konfigurasi perangkat keras, pemetaan pinout GPIO, kalibrasi sensorik, dan manajemen akun pengguna).
-   - **Kredensial Agroklimat (`agro` atau `pakar`):**  
-     $\implies$ Diberikan hak **Agronomist** (Akses terfokus pada analitik perbandingan model BMKG, pemodelan kurva evapotranspirasi $ET_0$, analisis defisit tekanan uap VPD, dan telaah log historis).
-   - **Kredensial Operasional Umum:**  
-     $\implies$ Diberikan hak **Field Officer / Petugas Lapang** (Akses operasional pemantauan telemetri *real-time* dan pelaporan status sensor).
+   Meniadakan selektor dropdown peran manual. Sistem mengevaluasi kredensial saat divalidasi dan menetapkan izin hak akses:
+   - Identitas administratif (`admin`, `ghiffa`, atau `haikal`) $\implies$ **Administrator** (Akses penuh ke konfigurasi hardware, pinout, kalibrasi, dan manajemen user).
+   - Identitas agroklimat (`agro` atau `pakar`) $\implies$ **Agronomist** (Fokus pada analitik perbandingan model BMKG, kurva ETo, dan log cuaca).
+   - Identitas operasional umum $\implies$ **Field Officer / Petugas Lapang** (Akses operasional monitoring telemetri *real-time*).
+3. **Mekanisme Otentikasi Bertingkat (*Dual-Engine Authentication Fallback*):**  
+   Sistem memvalidasi kredensial via Google Firebase Authentication saat terkoneksi internet. Apabila stasiun berada di area luar jangkauan (offline), sistem secara otomatis mengalihkan autentikasi ke basis data lokal stasiun (`agrinex_registered_users`), menjamin stasiun tetap dapat diakses tanpa hambatan jaringan.
 
 ---
 
-## 4.4 Arsitektur Sesi Persisten Terverifikasi (Session Resilience & Multi-Tier Auth)
+## 4.4 Layar 2: Onboarding Setup Wizard 5-Langkah Mandiri
 
-Untuk menjamin ketersediaan akses dashboard pada stasiun cuaca yang beroperasi di lingkungan agrikultur terisolasi (*isolated/intermittent connectivity*), arsitektur sesi dirancang independen terhadap siklus sinkronisasi eksternal.
+Bagi stasiun cuaca yang baru pertama kali dinyalakan atau selesai di-flash ulang, antarmuka menyajikan wizard penyiapan terpandu berdesain kartu tunggal 5-langkah (*run-once setup wizard*):
 
-### 4.4.1 Evaluasi Karakteristik Sinkronisasi Sesi
-Pada aplikasi web satu halaman (*single-page application* / SPA), mekanisme pendengar status asinkron standar (*asynchronous auth state observer*) umumnya memicu status awal bernilai `null` sebelum resolusi penyimpanan peramban selesai:
+![Tampilan Onboarding Wizard](./assets/ui_02_onboarding_wizard.png)
+*Gambar 4.2: Panduan Konfigurasi Awal Stasiun (Onboarding Wizard 5-Langkah).*
 
-```ts
-// Evaluasi Alur Listener Asinkron Standar:
-onAuthStateChanged(auth, (fbUser) => {
-  if (fbUser) {
-    this.setUser(mappedUser);
-  } else if (!this.currentUser?.isDemo) {
-    this.setUser(null); // Menghapus sesi jika jaringan eksternal belum siap
-  }
-});
-```
-
-Karakteristik propagasi `null` sesaat tersebut berpotensi menyebabkan deregistrasi sesi lokal (*session drops*) pada kondisi jaringan lokal tanpa akses internet publik.
-
-### 4.4.2 Implementasi Sesi Deterministik 30 Hari & Inisialisasi Sinkron State
-Sistem mengimplementasikan struktur sesi independen pada modul [`AuthService.ts`](file:///home/ghiffa/Documents/Projects_IoT/PlatformIO_Workspace/weather-station-agrinex/web/src/core/services/AuthService.ts):
-
-```ts
-export interface AuthSession {
-  user: AuthUser;
-  token: string;
-  expiresAt: number; // Masa berlaku 30 Hari
-}
-```
-
-1. **Inisialisasi Sinkron pada React State:**  
-   Pada `App.tsx`, state pengguna dimuat secara sinkron dari penyimpanan lokal terverifikasi sebelum siklus render pertama dieksekusi:
-   ```tsx
-   const [user, setUser] = useState<AuthUser | null>(() => AuthService.getCurrentUser());
-   ```
-   Hal ini menjamin status otentikasi langsung tersedia tanpa memicu peralihan sementara (*screen flickering*) ke halaman login.
-2. **Isolasi Terhadap Callback Asinkron:**  
-   Resolusi status lokal diproteksi terhadap fluktuasi koneksi jaringan awan, sehingga stasiun tetap dapat diakses penuh dalam jaringan lokal tertutup.
-3. **Terminasi Sesi Eksplisit:**  
-   Penghapusan token otentikasi hanya dieksekusi melalui aksi keluar (*explicit logout*) yang diinisiasi oleh pengguna terotentikasi.
+### Tahapan Konfigurasi Terpandu:
+1. **Langkah 1: Identitas & Elevasi Stasiun:** Penetapan nama stasiun mikroklimat dan input ketinggian lokasi di atas permukaan laut (default: Kuningan, 560 mdpl) untuk perhitungan konstanta psikrometrik $\gamma$.
+2. **Langkah 2: Konfigurasi Jaringan Wi-Fi:** Pengisian SSID dan kata sandi router lokal untuk koneksi ESP32.
+3. **Langkah 3: Uji Konektivitas Hardware:** Memeriksa respons komunikasi HTTP sensor melalui endpoint `/api/sensors`.
+4. **Langkah 4: Kalibrasi Offset Termal:** Menyetel offset kompensasi panas PCB DHT22 ($\Delta T = -4.8^\circ\text{C}$) dan threshold noise gate anemometer.
+5. **Langkah 5: Komit Memori Flash LittleFS:** Menyimpan seluruh parameter konfigurasi dalam format JSON ke partisi flash internal ESP32. Begitu selesai, flag `agrinex_onboarding_completed = true` disimpan permanen di penyimpanan peramban.
 
 ---
 
-## 4.5 Onboarding Setup Wizard Sekali Pakai (*Run-Once Setup*)
+## 4.5 Layar 3: Dashboard Utama Telemetri & Gauge Cuaca
 
-Bagi stasiun cuaca yang baru pertama kali dinyalakan atau belum dikonfigurasi, sistem menyediakan wizard penyiapan terpandu berdesain kartu tunggal terpusat 5-langkah:
+Dashboard utama merupakan pusat kendali operasional yang menyajikan telemetri mikroklimat secara *real-time* dengan tata letak Neumorphic yang teratur dan bersih:
 
-![Tampilan Onboarding Wizard](./assets/07_onboarding_wizard.png)
-
-### Tahapan Konfigurasi:
-1. **Langkah 1: Identitas Stasiun:** Penamaan stasiun dan penetapan elevasi lokal (Kuningan, 560 mdpl).
-2. **Langkah 2: Konfigurasi Wi-Fi:** Pengaturan SSID dan kata sandi jaringan nirkabel lapangan.
-3. **Langkah 3: Uji Koneksi Sensor:** Menguji respons perangkat keras via endpoint `/api/sensors`.
-4. **Langkah 4: Kalibrasi Awal:** Pengisian parameter offset termal DHT22 dan *noise gate* anemometer.
-5. **Langkah 5: Finalisasi & Flashing LittleFS:** Mengirimkan payload JSON konfigurasi ke endpoint `/api/config` ESP32 untuk disimpan permanen ke LittleFS.
-
-### Jaminan Sekali Pakai (*Run-Once Guarantee*):
-Begitu penyiapan selesai atau pengguna berhasil login, kunci `agrinex_onboarding_completed = 'true'` disimpan di storage permanen. Pengguna tidak akan pernah dialihkan kembali ke halaman onboarding saat me-refresh browser.
-
----
-
-## 4.6 Dashboard Real-Time & Kartu Telemetri Lapangan
-
-Dashboard utama menyajikan visualisasi data cuaca mikroklimat yang padat informasi, bersih, dan mudah dipahami:
-
-![Tampilan Dashboard Utama](./assets/02_dashboard_overview.png)
+![Tampilan Dashboard Utama Telemetri](./assets/ui_03_dashboard_overview.png)
+*Gambar 4.3: Tampilan Dashboard Utama Telemetri Real-Time Stasiun Cuaca Agrinex.*
 
 ### Modul-Modul Utama Dashboard:
-1. **Header Lokasi & Waktu:** Menampilkan nama wilayah ("Kelurahan Kuningan, Kecamatan Kuningan"), elevasi acuan (560 mdpl), serta waktu sinkronisasi data terkini.
-2. **Pemilih Aliran Data (*Dual-Stream Indicator*):** Menampilkan latensi aktual koneksi HTTP polling lokal (misal: `40ms`) dan tombol alih ke mode *Cloud Stream*.
-3. **Termometer Lapangan Neumorphic:** Menampilkan suhu udara dalam bentuk *gauge* busur melingkar bergradasi halus dengan status ambien ("Normal").
-4. **Status Daya & Baterai LiFePO4:** Menampilkan persentase kapasitas baterai, sisa daya dalam Ah ($30\text{ Ah}$ nominal), tegangan sel riil dari INA226 (misal: $3.55\text{ V}$), arus pengisian/beban surya ($mA$), serta estimasi waktu pengisian penuh dari panel surya TP5000.
-5. **Kartu Sensor Cepat:** Kelembapan Relatif ($RH$), Kecepatan Angin ($km/jam$), dan Intensitas Cahaya ($Lux$).
-6. **Kalkulator Terintegrasi FAO-56 ETo:** Menampilkan estimasi kehilangan air harian acuan secara otomatis berdasarkan kombinasi data sensor terkini.
+1. **Header Stasiun & Live Clock:** Menampilkan identitas stasiun ("Kelurahan Kuningan, Kecamatan Kuningan"), elevasi rujukan (560 mdpl), penunjuk waktu nyata (*LiveClock*), dan tombol menu navigasi.
+2. **Indikator Aliran Data Ganda (*Dual-Stream Indicator*):** Menampilkan latensi koneksi HTTP polling lokal (misal: `64ms`) dan tombol alih ke mode *Cloud Stream* (Firestore).
+3. **Termometer Lingkaran Neumorphic (*ArcGauge*):** Menampilkan visualisasi suhu udara dalam bentuk gauge busur melingkar bergradasi warna halus lengkap dengan status kenyamanan ambien.
+4. **Kartu Pemantau Baterai LiFePO4 (*BatteryCard*):** Menampilkan status kapasitas baterai (%), sisa kapasitas dalam Ah ($30\text{ Ah}$ nominal), tegangan sel riil dari INA226 (misal: $3.55\text{ V}$), arus pengisian/beban surya ($mA$), dan estimasi durasi pengisian penuh.
+5. **Kartu Metrik Instan:** Menampilkan nilai real-time Kelembapan Relatif ($RH$), Kecepatan Angin ($km/jam$ dan $m/s$), serta Intensitas Cahaya ($Lux$).
+6. **Kalkulator Terintegrasi FAO-56 ETo (*EtoWidget*):** Menampilkan estimasi kehilangan air harian acuan secara otomatis berdasarkan kombinasi data sensor terkini.
 
 ---
 
-## 4.7 Visualisasi Deret Waktu Recharts & Optimasi Viewport Sumbu Y
+## 4.6 Layar 4: Matriks Komparasi Nilai Ekstrem & Model Prakiraan BMKG
 
-Sistem menyajikan tiga grafik deret waktu (*time-series*) yang mengomparasikan sensor fisik mikroklimat terhadap model atmosfer resmi BMKG:
+Modul komparasi mengevaluasi rentang dinamika cuaca harian dan menyelaraskan data sensor terhadap model atmosfer resmi BMKG:
 
-![Tampilan Grafik Tren Cuaca](./assets/03_chart_trends.png)
+![Tampilan Matriks Ekstrem dan Prakiraan](./assets/ui_04_dashboard_extremes_and_forecast.png)
+*Gambar 4.4: Matriks Komparasi Nilai Ekstrem Harian dan Prakiraan Cuaca Sinkron BMKG.*
 
-![Tampilan Analisis Tren Komprehensif](./assets/04_analytics_view.png)
+### Fitur Analisis Komparasi:
+1. **Kartu Nilai Ekstrem Harian (*Extremes Comparison*):** Menyajikan perbandingan Suhu Maksimum/Minimum ($T_{\max}, T_{\min}$), Kelembapan Ekstrem ($RH_{\max}, RH_{\min}$), dan Kecepatan Angin Puncak (*Peak Gust*) antara data stasiun vs model BMKG dalam 24 jam terakhir.
+2. **Matriks Prakiraan Jam-ke-Jam (*Forecast Comparison Matrix*):** Tabel komparasi deret waktu yang menyelaraskan pembacaan sensor lapangan dengan interval prakiraan BMKG setiap 3 jam, memudahkan inspeksi anomali cuaca mikro di tingkat kebun.
 
-### Spesifikasi Teknis Rendering Grafik ([`ChartWidget.tsx`](file:///home/ghiffa/Documents/Projects_IoT/PlatformIO_Workspace/weather-station-agrinex/web/src/presentation/components/neumorphic/ChartWidget.tsx)):
+---
+
+## 4.7 Layar 5: Tabel Log Telemetri Real-Time & Riwayat Observasi
+
+Tabel log telemetri menyajikan catatan historis data mentah yang direkam stasiun untuk audit agrometeorologi:
+
+![Tampilan Tabel Log Telemetri](./assets/ui_05_dashboard_telemetry_table.png)
+*Gambar 4.5: Tabel Log Telemetri Real-Time dengan Indikator Status Sensor.*
+
+### Fitur Manajemen Log:
+1. **Perekaman Tabular Real-Time:** Menampilkan cap waktu (*timestamp*), suhu terkalibrasi, kelembapan, radiasi surya, kecepatan angin, dan tegangan catu daya secara terstruktur.
+2. **Badge Status Validitas Sensor:** Setiap baris dilengkapi label status sensor (misal: `Normal`, `Warning`, `Offline`) untuk deteksi dini malfungsi instrumen.
+3. **Paginasi & Kontrol Tampilan:** Dilengkapi kontrol navigasi halaman data dan indikator kapasitas log lokal yang disimpan di memori IndexedDB browser.
+
+---
+
+## 4.8 Layar 6: Visualisasi Deret Waktu Recharts Multi-Skala
+
+Grafik tren cuaca dibangun menggunakan pustaka Recharts dengan optimasi rendering koordinat SVG:
+
+![Tampilan Grafik Tren Deret Waktu](./assets/ui_06_chart_trends.png)
+*Gambar 4.6: Visualisasi Tren Deret Waktu Recharts dengan Filter Skala Waktu Responsif.*
+
+### Spesifikasi Teknis Grafik:
 1. **Kalibrasi Viewport & Presisi Sumbu Y:**  
    Untuk menjamin seluruh rentang numerik kecepatan angin ($0 - 50\text{ m/s}$) dan suhu tertampung utuh dalam batas render SVG tanpa terpotong (*zero-clipping*), kontainer Recharts dikalibrasi dengan margin kiri `left: 4px` dan parameter lebar sumbu tetap `width={48}`.
 2. **Tab Selektor Temporal Responsif:**  
@@ -172,23 +152,120 @@ Sistem menyajikan tiga grafik deret waktu (*time-series*) yang mengomparasikan s
 
 ---
 
-## 4.8 Arsitektur Manajemen Pengguna Non-Modal (*Inline Expansion*)
+## 4.9 Layar 7: Panel Analitik & Evaluasi Metrik Galat BMKG
 
-Modul pengelolaan pengguna pada tab **`5. Pengguna`** menerapkan pola antarmuka perluasan dalam-halaman (*Inline Expansion UI*), meniadakan penggunaan dialog modal sembul (*non-modal architecture*) maupun lapisan latar penutup gelap (*backdrop-free*). Pendekatan ini menjaga kesinambungan visual konteks telemetri stasiun cuaca saat administrator melakukan pembaruan profil pengguna.
+Panel analitik menyajikan evaluasi statistik mendalam mengenai deviasi data stasiun terhadap model rujukan BMKG:
 
-![Tampilan Tab Kelola Pengguna Inline](./assets/05_settings_users.png)
+![Tampilan Panel Analitik dan KPI](./assets/ui_07_analytics_kpi_overview.png)
+*Gambar 4.7: Panel Analitik Agroklimat dan Evaluasi Metrik Statistik Galat BMKG.*
 
-![Tampilan Kalibrasi Sensor dan Pengaturan Hardware](./assets/06_settings_calibration.png)
+### Fitur Evaluasi Statistik:
+1. **Grid Indikator Kinerja Utama (KPI Grid):** Menampilkan metrik validasi standar WMO secara langsung:
+   - *Root Mean Square Error* ($RMSE$) untuk mengukur magnitudo galat kuadratik.
+   - *Mean Absolute Error* ($MAE$) untuk mengukur deviasi rata-rata absolut.
+   - *Mean Absolute Percentage Error* ($MAPE$) untuk mengukur persentase galat relatif.
+   - Koefisien Korelasi Pearson ($r$) dan *Willmott Index of Agreement* ($d$) untuk membuktikan keselarasan pola kurva diurnal.
+2. **Status Validasi Akurasi:** Menampilkan lencana kepatuhan standar akurasi meteorologi (misal: "Sesuai Standar WMO $\pm 0.5^\circ\text{C}$").
 
-### Karakteristik Desain Pengguna Inline ([`UserManagementSection.tsx`](file:///home/ghiffa/Documents/Projects_IoT/PlatformIO_Workspace/weather-station-agrinex/web/src/presentation/components/settings/UserManagementSection.tsx)):
-1. **Integrasi Langsung dalam Halaman (*In-Page Expansion*):**  
-   Saat tombol **`Tambah Pengguna`** atau ikon **Edit** ditekan, formulir input terbuka secara mulus langsung di atas daftar pengguna dalam kontainer *neo-pressed* 2-kolom yang proporsional.
-2. **Akun Seeder Utama Bawaan (`admin@agrinex.id`):**  
-   Sistem secara otomatis menginjeksi 1 akun seeder admin superuser dengan nama `Haikal Jibran Al-Ghiffarry` dan peran `Administrator`. Kredensial bawaan: kata sandi `admin` atau `agrinex2026`.
-3. **Mekanisme Perlindungan Keamanan (*Safety Guards*):**  
-   - Akun seeder utama diberi label khusus `Seeder` dan tombol hapusnya dinonaktifkan secara permanen agar stasiun cuaca tidak pernah kehilangan akses administrator.
-   - Akun yang sedang aktif digunakan login diberi penanda `Anda (Aktif)` dan tidak dapat dihapus oleh diri sendiri.
-4. **Tombol Pulihkan Seeder (*Reset Seeder*):**  
-   Menyediakan tombol darurat untuk mereset seluruh daftar pengguna kembali ke kondisi pabrik dengan 1 akun seeder admin awal.
-5. **Sinkronisasi Otentikasi Instan:**  
-   Setiap akun baru yang ditambahkan langsung tersimpan ke memori otentikasi lokal stasiun (`agrinex_registered_users`), sehingga akun tersebut dapat langsung digunakan untuk masuk melalui halaman login.
+---
+
+## 4.10 Layar 8: Panel Rekomendasi Agro-Iklim & Peringatan Dini Penyakit
+
+Panel rekomendasi agronomi menerjemahkan data mentah mikroklimat menjadi instruksi praktis bagi pengelola lahan pertanian:
+
+![Tampilan Rekomendasi Agro-Iklim](./assets/ui_08_analytics_advisory_panel.png)
+*Gambar 4.8: Panel Rekomendasi Agro-Iklim dan Deteksi Dini Risiko Hama/Penyakit Tanaman.*
+
+### Fitur Penasihat Agronomi Cerdas:
+1. **Deteksi Dini Risiko Infeksi Jamur (*Fungal Disease Risk Alert*):** Menganalisis durasi kelembapan relatif tinggi ($RH > 85\%$) yang bertepatan dengan suhu $20 - 26^\circ\text{C}$ untuk memperingatkan potensi serangan jamur bercak daun (*late blight*) atau blas padi.
+2. **Analisis Defisit Tekanan Uap Kanopi (*VPD Advisory*):** Menilai apakah laju transpirasi tanaman berada pada zona optimal ($0.8 - 1.2\text{ kPa}$) atau mengalami stres kekeringan/kejenuhan uap.
+3. **Rekomendasi Debit Irigasi Presisi:** Memberikan estimasi kebutuhan volume air siram harian (liter/m² atau m³/hektar) berbasis komputasi evapotranspirasi acuan $ET_0$.
+
+---
+
+## 4.11 Layar 9: Modal Diagnostik Status Modul & Bus Periferal Hardware
+
+Modal diagnostik menyediakan fasilitas uji kesehatan perangkat keras secara langsung melalui jaringan:
+
+![Tampilan Modal Diagnostik Modul](./assets/ui_09_module_diagnostics_modal.png)
+*Gambar 4.9: Antarmuka Diagnostik Status Kesehatan 6 Modul Hardware dan Bus Komunikasi.*
+
+### Fitur Pengujian Hardware:
+1. **Uji Integritas 6 Modul Sensor:** Menampilkan status konektivitas perangkat keras secara individual: Sensor Suhu/RH DHT22, Sensor Cahaya BH1750, Sensor Daya INA226, Modul RTC DS3231, Modul Kartu SD, dan Anemometer.
+2. **Verifikasi Bus Komunikasi:** Menguji keandalan bus I2C (deteksi alamat `0x23`, `0x40`, `0x68`) dan bus SPI kartu SD.
+3. **Telemetri Sistem Tertanam:** Memantau kapasitas memori heap bebas ESP32 (*Free Heap RAM*), waktu aktif operasional (*Uptime* dalam detik), serta kekuatan sinyal Wi-Fi (*RSSI dBm*).
+
+---
+
+## 4.12 Layar 10: Pengaturan Tab 1 — Modul Hardware & Konfigurasi Pinout GPIO
+
+Tab modul dan pinout memungkinkan penyesuaian penugasan pin mikrokontroler secara nirkabel tanpa perlu me-reflash firmware melalui kabel serial:
+
+![Tampilan Pengaturan Tab 1 Modul](./assets/ui_10_settings_tab1_modules.png)
+*Gambar 4.10: Konfigurasi Tipe Papan Mikrokontroler dan Pemetaan Pinout GPIO.*
+
+### Fitur Konfigurasi Pinout:
+1. **Selektor Arsitektur Papan:** Mendukung pemilihan arsitektur mikrokontroler target antara **ESP32 DevKit v1** (default) dan **NodeMCU v2 (ESP8266)**.
+2. **Pemetaan GPIO Fleksibel:** Pengaturan nomor pin GPIO untuk data DHT22, interupsi anemometer, jalur I2C SDA/SCL, dan jalur SPI Chip Select (CS) kartu SD.
+3. **Toggle Modul Terpasang:** Administrator dapat mengaktifkan atau menonaktifkan modul tertentu (misal: menonaktifkan kartu SD jika stasiun beroperasi tanpa modul SD eksternal).
+
+---
+
+## 4.13 Layar 11: Pengaturan Tab 2 — Backend Protokol & Parameter Kalibrasi Sensor
+
+Tab backend mengatur protokol komunikasi stasiun dan matriks kalibrasi fisik sensor:
+
+![Tampilan Pengaturan Tab 2 Backend](./assets/ui_11_settings_tab2_backend.png)
+*Gambar 4.11: Konfigurasi Protokol Komunikasi Backend dan Matriks Offset Kalibrasi.*
+
+### Fitur Kalibrasi & Protokol:
+1. **Pemilihan Protokol Backend:** Mendukung pengalihan mode transmisi data antara **HTTP REST API**, **MQTT Broker**, dan **Direct Firebase Firestore**.
+2. **Kompensasi Termal PCB DHT22:** Input parameter offset suhu $\Delta T$ (default: $-4.8^\circ\text{C}$) dan offset kelembapan $\Delta RH$ (default: $+14\%$) untuk mengompensasi disipasi panas sirkuit regulator daya mikrokontroler.
+3. **Filter Noise Gate Anemometer:** Pengaturan ambang frekuensi pulsa (Hz) minimum agar getaran mekanis tiang saat angin tenang ($0\text{ m/s}$) tidak terhitung sebagai hembusan angin semu.
+
+---
+
+## 4.14 Layar 12: Pengaturan Tab 3 — Sinkronisasi Jaringan Wi-Fi & Cloud
+
+Tab sinkronisasi mengelola parameter konektivitas nirkabel dan jadwal transmisi telemetri:
+
+![Tampilan Pengaturan Tab 3 Sinkronisasi](./assets/ui_12_settings_tab3_sync.png)
+*Gambar 4.12: Pengaturan Kredensial Jaringan Wi-Fi dan Interval Pengiriman Telemetri.*
+
+### Fitur Pengaturan Jaringan:
+1. **Konfigurasi Wi-Fi Lapangan:** Pengaturan SSID stasiun dan kata sandi WPA2/WPA3 jaringan nirkabel kebun.
+2. **Interval Pengambilan Sampel Sensor:** Menetapkan frekuensi pembacaan sensor oleh FreeRTOS Core 1 (rentang: 2 hingga 60 detik).
+3. **Interval Publikasi Cloud:** Menetapkan frekuensi pengunggahan rata-rata telemetri ke server cloud Firestore (rentang: 1 hingga 60 menit) untuk menghemat konsumsi energi baterai surya.
+
+---
+
+## 4.15 Layar 13: Pengaturan Tab 4 — Pusat Ekspor Data Agrikultur
+
+Tab ekspor data menyediakan utilitas pengunduhan berkas konfigurasi firmware dan kumpulan data telemetri historis:
+
+![Tampilan Pengaturan Tab 4 Ekspor](./assets/ui_13_settings_tab4_export.png)
+*Gambar 4.13: Pusat Ekspor Data Agrikultur dan Manajemen Berkas Konfigurasi LittleFS.*
+
+### Fitur Pusat Ekspor:
+1. **Unduh Berkas `config.json`:** Mengunduh seluruh konfigurasi stasiun dalam format JSON baku untuk langsung diunggah ke partisi memori LittleFS ESP32.
+2. **Unggah & Pulihkan Konfigurasi:** Mengunggah berkas `config.json` eksternal untuk menduplikasi pengaturan ke stasiun cuaca baru dalam hitungan detik.
+3. **Ekspor Telemetri ke CSV / JSON:** Mengekspor seluruh riwayat pencatatan sensor ke format tabel CSV (*Comma Separated Values*) yang kompatibel dengan Microsoft Excel, RStudio, SPSS, atau pustaka Python Pandas untuk keperluan pengolahan data penelitian lanjutan.
+
+---
+
+## 4.16 Layar 14: Pengaturan Tab 5 — Manajemen Pengguna Inline & Keamanan RBAC
+
+Tab pengguna mengimplementasikan kontrol akses berbasis peran (*Role-Based Access Control*) secara bersih dan aman:
+
+![Tampilan Pengaturan Tab 5 Pengguna](./assets/ui_14_settings_tab5_users.png)
+*Gambar 4.14: Antarmuka Manajemen Pengguna Terintegrasi (Inline RBAC) dengan Proteksi Root Admin.*
+
+### Fitur Manajemen Pengguna:
+1. **Antarmuka Perluasan Dalam-Halaman (*Inline Expansion UI*):**  
+   Saat tombol `Tambah Pengguna` ditekan, formulir input terbuka langsung di atas daftar pengguna tanpa menggunakan dialog modal sembul (*popup*) maupun lapisan penutup gelap (*no backdrop overlay*), menjaga visibilitas konteks stasiun cuaca.
+2. **Akun Root Seeder Admin Terproteksi:**  
+   Sistem menyematkan akun administrator bawaan atas nama **Haikal Jibran Al-Ghiffarry** (`admin@agrinex.id`). Akun ini memiliki proteksi permanen (*system-locked*) di mana tombol hapusnya dinonaktifkan agar stasiun cuaca tidak pernah kehilangan akses administratif.
+3. **Pemberian Hak Akses Berjenjang:**  
+   Administrator dapat menambahkan operator baru dengan peran **Administrator**, **Agronomist**, atau **Field Officer**. Akun yang baru didaftarkan langsung tersinkronisasi ke memori otentikasi lokal stasiun dan dapat langsung digunakan untuk login di lapangan.
+4. **Tombol Pulihkan Pengguna Pabrik (*Reset to Factory Users*):**  
+   Menyediakan fungsi pemulihan darurat untuk mengembalikan daftar akun ke kondisi default dengan akun seeder admin utama.
