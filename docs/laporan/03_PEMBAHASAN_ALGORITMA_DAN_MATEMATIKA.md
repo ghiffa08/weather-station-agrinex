@@ -24,6 +24,9 @@ Di mana:
 - $\gamma$ : Konstanta psikrometrik $[\text{kPa/}\,^\circ\text{C}]$.
 - $0.408$ : Faktor konversi energi radiasi ($\text{MJ/m}^2/\text{hari}$) menjadi ekuivalen kedalaman air ($\text{mm/hari}$), berasal dari inversi panas laten penguapan air ($\lambda \approx 2.45\text{ MJ/kg}$).
 
+![Dinamika Harian Evapotranspirasi Acuan FAO-56 ETo](./assets/fig_05_fao56_eto_diurnal.png)
+*Gambar 3.1: Dinamika Harian Laju Evapotranspirasi Acuan FAO-56 ($ET_0$) terhadap Fluks Radiasi Surya ($R_s$) dan Dinamika Suhu/Angin.*
+
 ---
 
 ### 3.1.2 Komponen Penurunan Matematis

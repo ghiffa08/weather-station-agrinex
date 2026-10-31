@@ -6,21 +6,8 @@
 
 Pengujian menyeluruh (*comprehensive verification and validation*) dilakukan untuk membuktikan keandalan rekayasa sistem terintegrasi **Agrinex Microclimate Weather Station**. Pengujian dirancang secara berlapis mengikuti metodologi piramida pengujian rekayasa perangkat lunak dan sistem benam (*embedded system*).
 
-```
-                      / \
-                     /   \
-                    / E2E \       Level 4: Validasi Lapangan vs BMKG
-                   / Field \
-                  /---------\
-                 /  Network  \     Level 3: Uji Latensi REST & Stabilitas Sesi
-                / Stabilitas  \
-               /---------------\
-              / Hardware-Firmware\  Level 2: Uji Integrasi I2C, ISR & Manajemen Daya
-             /    Integration     \
-            /---------------------\
-           /      Unit Testing     \ Level 1: Uji Komputasi Matematika & Driver Sensor
-          /_________________________\
-```
+![Piramida Metodologi Pengujian Bertingkat](./assets/fig_01_testing_pyramid.png)
+*Gambar 5.1: Hierarki Metodologi Pengujian dan Validasi Bertingkat (Verification & Validation Hierarchy).*
 
 ### 5.1.1 Klasifikasi Pengujian
 1. **Level 1: Unit Testing (Pengujian Modul & Algoritma)**
@@ -55,14 +42,8 @@ Pengujian dilakukan dengan mengirimkan 100 permintaan HTTP `GET /api/telemetry` 
 | **Keberhasilan Request (Success Rate)** | $100.0\%$ | 0 request timeout atau dropped |
 | **Ukuran Payload JSON** | $312\text{ bytes}$ | Terkompresi, efisien untuk throughput mikrokontroler |
 
-```
-Distribusi Latensi Mode Lokal (ms)
- 0 -  40 ms | [========] 14%
-41 -  60 ms | [====================================] 48%
-61 -  80 ms | [==============================] 30%
-81 - 100 ms | [=====] 6%
-    > 100 ms | [=] 2%
-```
+![Distribusi Latensi REST API Dual-Stream](./assets/fig_02_rest_latency_distribution.png)
+*Gambar 5.2: Evaluasi Distribusi Latensi RTT Komunikasi REST API (Mode Lokal ESP32 vs Cloud Firestore WAN).*
 
 ### 5.2.2 Pengujian Latensi Cloud Firestore REST Stream
 Pengujian dilakukan dari jaringan eksternal (Vercel Edge Network ke Google Cloud Firestore Server regional `asia-southeast2` Jakarta):
@@ -133,22 +114,19 @@ Validasi akurasi sensorik dilakukan dengan membandingkan data telemetri yang dir
 | **18:00** | 25.1 | 24.8 | 76.5 | 78.0 | 12.0 | 15.0 | 0.84 | 0.90 |
 | **21:00** | 23.5 | 23.8 | 84.0 | 83.0 | 0.0 | 0.0 | 0.42 | 0.50 |
 
----
+![Validasi Komparatif Data Telemetri Lapangan 24 Jam vs Model BMKG](./assets/fig_03_field_vs_bmkg_validation.png)
+*Gambar 5.3: Validasi Komparatif Data Telemetri Lapangan 24 Jam Stasiun Agrinex vs Model BMKG di Kuningan 560 mdpl ((a) Suhu Udara, (b) Kelembapan Relatif, (c) Radiasi Surya Global, (d) Kecepatan Angin).*
 
 ### 5.4.2 Evaluasi Metrik Statistik Standar WMO
 
 Berdasarkan formulasi metrik verifikasi yang telah dijabarkan pada Bab III, hasil perhitungan statistik komparatif adalah sebagai berikut:
 
-```
-+----------------------------------------------------------------------------------------------------+
-| Parameter            |    MAE    |    RMSE   |   MAPE (%) |   MBE     | Pearson r | Willmott d (IA)|
-+----------------------+-----------+-----------+------------+-----------+-----------+----------------+
-| Suhu Udara (T)       | 0.35 °C   | 0.38 °C   |  1.42 %    | -0.15 °C  |   0.994   |     0.997      |
-| Kelembapan (RH)      | 1.45 %    | 1.63 %    |  1.96 %    | +0.73 %   |   0.988   |     0.994      |
-| Radiasi Surya (Rs)   | 24.8 W/m² | 31.2 W/m² |  5.24 %    | -9.56 W/m²|   0.998   |     0.999      |
-| Kecepatan Angin (u2) | 0.14 m/s  | 0.16 m/s  | 10.85 %    | -0.01 m/s |   0.989   |     0.994      |
-+----------------------------------------------------------------------------------------------------+
-```
+| Parameter Meteorologi | MAE | RMSE | MAPE (%) | MBE | Korelasi Pearson ($r$) | Willmott Index ($d$) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Suhu Udara ($T$)** | $0.35^\circ\text{C}$ | $0.38^\circ\text{C}$ | $1.42\%$ | $-0.15^\circ\text{C}$ | **$0.994$** | **$0.997$** |
+| **Kelembapan Relatif ($RH$)** | $1.45\%$ | $1.63\%$ | $1.96\%$ | $+0.73\%$ | **$0.988$** | **$0.994$** |
+| **Radiasi Surya ($R_s$)** | $24.8\text{ W/m}^2$ | $31.2\text{ W/m}^2$ | $5.24\%$ | $-9.56\text{ W/m}^2$ | **$0.998$** | **$0.999$** |
+| **Kecepatan Angin ($u_2$)** | $0.14\text{ m/s}$ | $0.16\text{ m/s}$ | $10.85\%$ | $-0.01\text{ m/s}$ | **$0.989$** | **$0.994$** |
 
 #### Interpretasi Ilmiah Hasil Evaluasi:
 1. **Suhu Udara ($T$):**
@@ -181,19 +159,8 @@ Pengukuran konsumsi arus riil dilakukan pada tegangan rel baterai nominal $3.20\
 ### 5.5.2 Uji Otonomi Energi Baterai LiFePO4 (Simulasi Tanpa Pengisian)
 Untuk menguji batas ketahanan otonom, stasiun dioperasikan dalam kondisi panel surya dilepas secara sengaja pada kapasitas baterai awal $100\%$ ($3.45\text{ V}$):
 
-```
-Tegangan Sel Baterai LiFePO4 vs Waktu Operasional (Hari)
-V (Volt)
-3.5 | * [Start: 3.45V]
-3.4 |  \
-3.3 |   \_____________________________________________ [Plateau Discharge 3.25V - 3.20V]
-3.2 |                                                 \
-3.1 |                                                  \
-3.0 |                                                   \
-2.8 |                                                    * [Cut-off TP5000 / BMS: Hari ke-11.3]
-    +---+---+---+---+---+---+---+---+---+---+---+---+---+
-    0   1   2   3   4   5   6   7   8   9  10  11  12  Hari
-```
+![Kurva Pelucutan Baterai LiFePO4 3.2V 30Ah](./assets/fig_04_lifepo4_discharge_curve.png)
+*Gambar 5.4: Kurva Pelucutan Tegangan Sel Baterai LiFePO4 3.2V 30Ah Selama 11.3 Hari (272 Jam) Operasional Kontinu Tanpa Pengisian Surya.*
 
 - **Kapasitas Baterai Terpasang:** $30\text{ Ah}$ @ $3.2\text{ V} = 96.0\text{ Wh}$.
 - **Kapasitas Baterai Efektif ($80\%\text{ DoD}$):** $76.8\text{ Wh} = 24.0\text{ Ah}$.
