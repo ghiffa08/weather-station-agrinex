@@ -9,7 +9,7 @@
 ### 2.1.1 Konfigurasi Kompilasi (`platformio.ini`)
 ```ini
 ; PlatformIO Project Configuration File
-; Project: Agrinex Weather Station — Dual ESP32 & ESP8266 Support
+; Project: Agrinex Weather Station  -  Dual ESP32 & ESP8266 Support
 ; Target: ESP32 (ESP-WROOM-32) & NodeMCU v2 (ESP8266)
 
 [platformio]

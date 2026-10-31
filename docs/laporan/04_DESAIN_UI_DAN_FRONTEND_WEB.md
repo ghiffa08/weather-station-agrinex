@@ -197,7 +197,7 @@ Modal diagnostik menyediakan fasilitas uji kesehatan perangkat keras secara lang
 
 ---
 
-## 4.12 Layar 10: Pengaturan Tab 1 — Modul Hardware & Konfigurasi Pinout GPIO
+## 4.12 Layar 10: Pengaturan Tab 1  -  Modul Hardware & Konfigurasi Pinout GPIO
 
 Tab modul dan pinout memungkinkan penyesuaian penugasan pin mikrokontroler secara nirkabel tanpa perlu me-reflash firmware melalui kabel serial:
 
@@ -211,7 +211,7 @@ Tab modul dan pinout memungkinkan penyesuaian penugasan pin mikrokontroler secar
 
 ---
 
-## 4.13 Layar 11: Pengaturan Tab 2 — Backend Protokol & Parameter Kalibrasi Sensor
+## 4.13 Layar 11: Pengaturan Tab 2  -  Backend Protokol & Parameter Kalibrasi Sensor
 
 Tab backend mengatur protokol komunikasi stasiun dan matriks kalibrasi fisik sensor:
 
@@ -225,7 +225,7 @@ Tab backend mengatur protokol komunikasi stasiun dan matriks kalibrasi fisik sen
 
 ---
 
-## 4.14 Layar 12: Pengaturan Tab 3 — Sinkronisasi Jaringan Wi-Fi & Cloud
+## 4.14 Layar 12: Pengaturan Tab 3  -  Sinkronisasi Jaringan Wi-Fi & Cloud
 
 Tab sinkronisasi mengelola parameter konektivitas nirkabel dan jadwal transmisi telemetri:
 
@@ -239,7 +239,7 @@ Tab sinkronisasi mengelola parameter konektivitas nirkabel dan jadwal transmisi 
 
 ---
 
-## 4.15 Layar 13: Pengaturan Tab 4 — Pusat Ekspor Data Agrikultur
+## 4.15 Layar 13: Pengaturan Tab 4  -  Pusat Ekspor Data Agrikultur
 
 Tab ekspor data menyediakan utilitas pengunduhan berkas konfigurasi firmware dan kumpulan data telemetri historis:
 
@@ -253,7 +253,7 @@ Tab ekspor data menyediakan utilitas pengunduhan berkas konfigurasi firmware dan
 
 ---
 
-## 4.16 Layar 14: Pengaturan Tab 5 — Manajemen Pengguna Inline & Keamanan RBAC
+## 4.16 Layar 14: Pengaturan Tab 5  -  Manajemen Pengguna Inline & Keamanan RBAC
 
 Tab pengguna mengimplementasikan kontrol akses berbasis peran (*Role-Based Access Control*) secara bersih dan aman:
 
