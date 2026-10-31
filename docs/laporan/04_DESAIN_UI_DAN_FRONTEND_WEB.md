@@ -52,69 +52,71 @@ web/src/
 
 ---
 
-## 4.3 Arsitektur Autentikasi Minimalis & Deteksi Peran Berbasis Audit Keamanan
+## 4.3 Arsitektur Autentikasi & Kontrol Akses Berbasis Peran (RBAC)
 
-Halaman login direkayasa dengan pendekatan antarmuka terpusat (*ultra-minimal single-card*, `max-w-xs`), dirancang secara spesifik untuk memangkas *time-to-insight* teknisi di lapangan tanpa mengorbankan postur keamanan sistem IoT.
+Antarmuka autentikasi stasiun cuaca direkayasa menggunakan pendekatan kartu tunggal ringkas (*compact single-card*, `max-w-xs`), berfokus pada efisiensi akses operasional lapangan dengan mematuhi standar keamanan perangkat lunak.
 
 ![Tampilan Halaman Login Ultra-Minimalis](./assets/01_login_page.png)
 
-### 4.3.1 Parameter Audit Keamanan & Ergonomi Akses Pengguna
+### 4.3.1 Spesifikasi Formulir Autentikasi & Proteksi Kredensial
 
-Dalam evaluasi audit keamanan perangkat lunak (*security & privacy audit*), aspek autentikasi stasiun cuaca Agrinex memenuhi kriteria berikut:
+Dalam evaluasi rancang bangun antarmuka, subsistem formulir login mengimplementasikan parameter teknis berikut:
 
-1. **Peniadaan Placeholder yang Membocorkan Akun (*Information Disclosure Mitigation*):**  
-   Mengacu pada standar keamanan peramban dan rekomendasi OWASP terkait pencegahan pembocoran informasi (*credential enumeration & sensitive data leakage*), *field* `Email` dan `Kata Sandi` tidak memuat teks placeholder domain bawaan maupun format akun contoh (`placeholder=""`). Status awal (*initial state*) diinisialisasi secara ketat dalam kondisi string kosong (`''`) guna mengeliminasi potensi paparan struktur akun internal stasiun pada peramban bersama (*shared field devices*).
+1. **Konfigurasi Input Kredensial Murni (*Zero-State Input Specification*):**  
+   Elemen masukan `Email` dan `Kata Sandi` dikonfigurasi secara ketat tanpa teks contoh bawaan (`placeholder=""`) dan status awal komponen (*initial state*) diinisialisasi dalam bentuk string kosong (`''`). Penerapan isolasi masukan ini bertujuan mencegah kebocoran informasi (*information disclosure mitigation*) terkait struktur domain atau penamaan akun stasiun pada perangkat terminal lapangan yang digunakan secara bersama (*shared field devices*).
 
-2. **Deteksi Peran Otomatis (*Auto-Role Detection Engine*):**  
-   Untuk meminimalkan beban kognitif pengguna (*cognitive load reduction*) serta meniadakan kerentanan manipulasi peran pada sisi klien (*client-side role tampering*), sistem tidak menyediakan pemilih peran manual. Penentuan hak akses (*Role-Based Access Control / RBAC*) dieksekusi secara otomatis dan deterministik saat kredensial divalidasi:
-   - **Kredensial dengan Penanda Administratif (`admin`, `ghiffa`, atau `haikal`):**  
-     $\implies$ Diberikan wewenang **Administrator** (Akses penuh tanpa restriksi ke pengaturan perangkat keras, konfigurasi pinout ESP32, matriks kalibrasi sensor, serta konsol manajemen pengguna).
-   - **Kredensial dengan Penanda Analitik Agroklimat (`agro` atau `pakar`):**  
-     $\implies$ Diberikan wewenang **Agronomist** (Akses terfokus pada komparasi data model BMKG, pemodelan kurva evapotranspirasi $ET_0$, analisis defisit tekanan uap VPD, dan riwayat log mikroklimat).
-   - **Kredensial Lapangan / Pengguna Umum Lainnya:**  
-     $\implies$ Diberikan wewenang **Field Officer / Petugas Lapang** (Akses operasional terbatas untuk pemantauan telemetri *real-time* dan pelaporan kondisi sensor).
+2. **Mesin Deteksi Peran Otomatis (*Auto-Role Detection Engine*):**  
+   Untuk meminimalkan beban kognitif operator (*cognitive load reduction*) serta meniadakan kerentanan pemalsuan hak akses di sisi klien (*client-side role tampering*), antarmuka meniadakan pemilih peran manual. Penentuan hak akses (*Role-Based Access Control / RBAC*) dieksekusi secara otomatis dan deterministik saat kredensial divalidasi oleh sistem:
+   - **Kredensial Administratif (`admin`, `ghiffa`, atau `haikal`):**  
+     $\implies$ Diberikan hak **Administrator** (Akses penuh ke konfigurasi perangkat keras, pemetaan pinout GPIO, kalibrasi sensorik, dan manajemen akun pengguna).
+   - **Kredensial Agroklimat (`agro` atau `pakar`):**  
+     $\implies$ Diberikan hak **Agronomist** (Akses terfokus pada analitik perbandingan model BMKG, pemodelan kurva evapotranspirasi $ET_0$, analisis defisit tekanan uap VPD, dan telaah log historis).
+   - **Kredensial Operasional Umum:**  
+     $\implies$ Diberikan hak **Field Officer / Petugas Lapang** (Akses operasional pemantauan telemetri *real-time* dan pelaporan status sensor).
 
 ---
 
-## 4.4 Sistem Sesi Persisten 30 Hari Anti-Logout (*NextAuth-Style Session*)
+## 4.4 Arsitektur Sesi Persisten Terverifikasi (Session Resilience & Multi-Tier Auth)
 
-Salah satu kendala umum pada aplikasi web single-page (SPA) berbasis Firebase Auth adalah kecenderungan pengguna terlempar keluar (*logout*) ke halaman login setiap kali tombol penyegaran (*refresh*) browser ditekan.
+Untuk menjamin ketersediaan akses dashboard pada stasiun cuaca yang beroperasi di lingkungan agrikultur terisolasi (*isolated/intermittent connectivity*), arsitektur sesi dirancang independen terhadap siklus sinkronisasi eksternal.
 
-### 4.4.1 Analisis Akar Masalah (*Root Cause Analysis*)
-Pustaka Firebase Auth memiliki siklus inisialisasi asinkron:
+### 4.4.1 Evaluasi Karakteristik Sinkronisasi Sesi
+Pada aplikasi web satu halaman (*single-page application* / SPA), mekanisme pendengar status asinkron standar (*asynchronous auth state observer*) umumnya memicu status awal bernilai `null` sebelum resolusi penyimpanan peramban selesai:
+
 ```ts
-// KODE BERMASALAH SEBELUMNYA:
+// Evaluasi Alur Listener Asinkron Standar:
 onAuthStateChanged(auth, (fbUser) => {
   if (fbUser) {
     this.setUser(mappedUser);
   } else if (!this.currentUser?.isDemo) {
-    this.setUser(null); // <-- BUG FATAL: Dipanggil dengan null saat inisialisasi awal!
+    this.setUser(null); // Menghapus sesi jika jaringan eksternal belum siap
   }
 });
 ```
-Saat browser dimuat ulang, Firebase SDK selalu memicu pemanggilan pertama dengan `fbUser = null` sebelum verifikasi token IndexedDB selesai atau saat stasiun berada di jaringan lokal tanpa internet. Callback `null` sesaat ini seketika menghapus sesi pengguna di `localStorage` dan merender ulang `LoginPage`.
 
-### 4.4.2 Solusi: Sesi Token 30 Hari & Inisialisasi Sinkron
-Diimplementasikan struktur sesi independen di dalam [`AuthService.ts`](file:///home/ghiffa/Documents/Projects_IoT/PlatformIO_Workspace/weather-station-agrinex/web/src/core/services/AuthService.ts):
+Karakteristik propagasi `null` sesaat tersebut berpotensi menyebabkan deregistrasi sesi lokal (*session drops*) pada kondisi jaringan lokal tanpa akses internet publik.
+
+### 4.4.2 Implementasi Sesi Deterministik 30 Hari & Inisialisasi Sinkron State
+Sistem mengimplementasikan struktur sesi independen pada modul [`AuthService.ts`](file:///home/ghiffa/Documents/Projects_IoT/PlatformIO_Workspace/weather-station-agrinex/web/src/core/services/AuthService.ts):
 
 ```ts
 export interface AuthSession {
   user: AuthUser;
   token: string;
-  expiresAt: number; // Berlaku 30 Hari
+  expiresAt: number; // Masa berlaku 30 Hari
 }
 ```
 
-1. **Inisialisasi Sinkron di React State:**  
-   Pada `App.tsx`, state pengguna diinisialisasi secara sinkron langsung dari `localStorage`:
+1. **Inisialisasi Sinkron pada React State:**  
+   Pada `App.tsx`, state pengguna dimuat secara sinkron dari penyimpanan lokal terverifikasi sebelum siklus render pertama dieksekusi:
    ```tsx
    const [user, setUser] = useState<AuthUser | null>(() => AuthService.getCurrentUser());
    ```
-   Data pengguna telah tersedia sebelum siklus render pertama dieksekusi, mengeliminasi kedipan (*screen flashing*) ke halaman login.
-2. **Kekebalan Callback Asinkron:**  
-   Callback `null` sementara dari Firebase SDK diabaikan dan tidak menghapus sesi lokal.
-3. **Logout Eksplisit Saja:**  
-   Sesi lokal hanya dihapus apabila pengguna secara sadar menekan tombol **Keluar (Logout)** di popover profil.
+   Hal ini menjamin status otentikasi langsung tersedia tanpa memicu peralihan sementara (*screen flickering*) ke halaman login.
+2. **Isolasi Terhadap Callback Asinkron:**  
+   Resolusi status lokal diproteksi terhadap fluktuasi koneksi jaringan awan, sehingga stasiun tetap dapat diakses penuh dalam jaringan lokal tertutup.
+3. **Terminasi Sesi Eksplisit:**  
+   Penghapusan token otentikasi hanya dieksekusi melalui aksi keluar (*explicit logout*) yang diinisiasi oleh pengguna terotentikasi.
 
 ---
 
@@ -152,7 +154,7 @@ Dashboard utama menyajikan visualisasi data cuaca mikroklimat yang padat informa
 
 ---
 
-## 4.7 Visualisasi Tren Komparatif Recharts & Perbaikan Sumbu Y
+## 4.7 Visualisasi Deret Waktu Recharts & Optimasi Viewport Sumbu Y
 
 Sistem menyajikan tiga grafik deret waktu (*time-series*) yang mengomparasikan sensor fisik mikroklimat terhadap model atmosfer resmi BMKG:
 
@@ -160,19 +162,19 @@ Sistem menyajikan tiga grafik deret waktu (*time-series*) yang mengomparasikan s
 
 ![Tampilan Analisis Tren Komprehensif](./assets/04_analytics_view.png)
 
-### Penyempurnaan Teknis Grafik ([`ChartWidget.tsx`](file:///home/ghiffa/Documents/Projects_IoT/PlatformIO_Workspace/weather-station-agrinex/web/src/presentation/components/neumorphic/ChartWidget.tsx)):
-1. **Solusi Pemotongan Karakter Sumbu Y (`00 m/s`):**  
-   Pada konfigurasi awal, terdapat margin negatif `left: -20` yang menyebabkan digit puluhan pada label kecepatan angin (misal: `30 m/s`, `20 m/s`) terdorong keluar batas SVG koordinat $x < 0$ dan terpotong browser menjadi `0 m/s` atau `00 m/s`. Masalah ini diatasi secara permanen dengan mengatur margin `left: 4px` dan menetapkan `width={48}` eksplisit, sehingga seluruh angka dan satuan tampil tajam dan utuh.
-2. **Tab Waktu Ringkas Bebas Overflow:**  
-   Tombol filter waktu diubah menjadi format responsif ringkas: `[ 1J | 24J | 7H | 30H ]`. Pada layar tablet 3-kolom, tab ini hanya memakan lebar $\approx 95\text{ px}$, mencegah judul kartu terlipat menjadi 3 baris vertikal maupun meluap menabrak border kartu.
-3. **Tooltip Informatif Bersatuan:**  
-   Arahkan kursor (*hover*) pada grafik menampilkan tooltip berdesain Neumorphic yang secara otomatis menyematkan satuan fisik riil (`°C`, `%`, `m/s`) dan waktu pencatatan.
+### Spesifikasi Teknis Rendering Grafik ([`ChartWidget.tsx`](file:///home/ghiffa/Documents/Projects_IoT/PlatformIO_Workspace/weather-station-agrinex/web/src/presentation/components/neumorphic/ChartWidget.tsx)):
+1. **Kalibrasi Viewport & Presisi Sumbu Y:**  
+   Untuk menjamin seluruh rentang numerik kecepatan angin ($0 - 50\text{ m/s}$) dan suhu tertampung utuh dalam batas render SVG tanpa terpotong (*zero-clipping*), kontainer Recharts dikalibrasi dengan margin kiri `left: 4px` dan parameter lebar sumbu tetap `width={48}`.
+2. **Tab Selektor Temporal Responsif:**  
+   Pilihan jendela agregasi waktu menggunakan format responsif berbobot rendah: `[ 1J | 24J | 7H | 30H ]`. Pada resolusi tablet 3-kolom, tab ini mengonsumsi lebar optimal $\approx 95\text{ px}$, mencegah terjadinya pembungkusan teks (*text wrapping*) maupun *overflow* terhadap batas kontainer Neumorphic.
+3. **Tooltip Interaktif Berbasis Satuan Fisik:**  
+   Interaksi kursor (*hover/touch*) memicu tooltip Neumorphic mengambang yang menyajikan label waktu terindeks dan satuan fisik riil (`°C`, `%`, `m/s`).
 
 ---
 
-## 4.8 Manajemen Pengguna Inline & 1 Akun Seeder Admin
+## 4.8 Arsitektur Manajemen Pengguna Non-Modal (*Inline Expansion*)
 
-Sesuai instruksi untuk menjaga antarmuka tetap bersih dan tidak mengganggu alur kerja (*clean & non-disruptive*), modul pengelolaan pengguna di tab **`5. Pengguna`** didesain secara **inline** tanpa menggunakan dialog modal popup (*no popup modal*) dan tanpa lapisan latar belakang gelap (*no dark backdrop*).
+Modul pengelolaan pengguna pada tab **`5. Pengguna`** menerapkan pola antarmuka perluasan dalam-halaman (*Inline Expansion UI*), meniadakan penggunaan dialog modal sembul (*non-modal architecture*) maupun lapisan latar penutup gelap (*backdrop-free*). Pendekatan ini menjaga kesinambungan visual konteks telemetri stasiun cuaca saat administrator melakukan pembaruan profil pengguna.
 
 ![Tampilan Tab Kelola Pengguna Inline](./assets/05_settings_users.png)
 

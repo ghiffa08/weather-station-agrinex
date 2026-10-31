@@ -112,7 +112,7 @@ for (let cycle = 1; cycle <= 100; cycle++) {
 | **Waktu Tampil Dashboard ($T_{\text{render}}$)** | $< 150\text{ ms}$ | $1850\text{ ms}$ *(menunggu network)* | **$42\text{ ms}$ *(baca sinkron cache local)*** | **Peningkatan $44\times$** |
 | **Frekuensi Muncul Onboarding Wizard** | Maks 1 kali | Berulang tiap reload | **Tepat 1 kali *(flag persisted)*** | **Lulus Sempurna** |
 | **Ketahanan Akun Seeder Admin** | Tidak bisa terhapus | Dapat terhapus tanpa sengaja | **Proteksi Root Seeder Aktif** | **Lulus Sempurna** |
-| **Keamanan Input Form Login** | Zero pre-filled creds | Rawan kebocoran kredensial | **Clean input tanpa placeholder** | **Lulus Audit Keamanan** |
+| **Spesifikasi Input Form Login** | Zero-state input | Standar tanpa default credentials | **Inisialisasi string kosong (`placeholder=""`)** | **Sesuai Standar Audit Keamanan** |
 
 ---
 
