@@ -160,7 +160,6 @@ def format_inline_markdown(paragraph, text, base_font_name='Times New Roman', ba
 
 def add_styled_paragraph(doc, text, space_after=6, line_spacing=1.5, align=WD_ALIGN_PARAGRAPH.JUSTIFY, left_indent=0.0, first_indent=0.0, prefix=None, prefix_bold=True):
     p = doc.add_paragraph()
-    p.alignment = align
     p.paragraph_format.space_before = Pt(0)
     p.paragraph_format.space_after = Pt(space_after)
     p.paragraph_format.line_spacing = line_spacing
@@ -168,6 +167,15 @@ def add_styled_paragraph(doc, text, space_after=6, line_spacing=1.5, align=WD_AL
         p.paragraph_format.left_indent = Inches(left_indent)
     if first_indent != 0.0:
         p.paragraph_format.first_line_indent = Inches(first_indent)
+
+    p.alignment = align
+    if align == WD_ALIGN_PARAGRAPH.JUSTIFY:
+        pPr = p._p.get_or_add_pPr()
+        jc = pPr.find(qn('w:jc'))
+        if jc is None:
+            pPr.append(parse_xml(f'<w:jc {nsdecls("w")} w:val="both"/>'))
+        else:
+            jc.set(qn('w:val'), 'both')
 
     if prefix:
         r_pre = p.add_run(prefix)
@@ -297,6 +305,20 @@ def export_markdown_to_docx(md_path, docx_path, logo_path):
     section.bottom_margin = Inches(1.18)  # 3.0 cm
 
     build_cover_page(doc, logo_path)
+
+    # Configure Normal style to default to Justified across the document
+    style_normal = doc.styles['Normal']
+    style_normal.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    style_normal.font.name = 'Times New Roman'
+    style_normal.font.size = Pt(12)
+    style_normal.font.color.rgb = RGBColor(0, 0, 0)
+
+    pPr_style = style_normal._element.get_or_add_pPr()
+    jc_style = pPr_style.find(qn('w:jc'))
+    if jc_style is None:
+        pPr_style.append(parse_xml(f'<w:jc {nsdecls("w")} w:val="both"/>'))
+    else:
+        jc_style.set(qn('w:val'), 'both')
 
     base_dir = os.path.dirname(md_path)
 
