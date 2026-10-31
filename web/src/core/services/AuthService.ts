@@ -208,7 +208,7 @@ class AuthServiceClass {
     }
 
     const autoRole: 'Administrator' | 'Agronomist' | 'Field Officer' = 
-      cleanEmail.includes('admin') || cleanEmail.includes('surya')
+      cleanEmail.includes('admin') || cleanEmail.includes('ghiffa') || cleanEmail.includes('haikal')
         ? 'Administrator'
         : cleanEmail.includes('agro') || cleanEmail.includes('pakar')
           ? 'Agronomist'

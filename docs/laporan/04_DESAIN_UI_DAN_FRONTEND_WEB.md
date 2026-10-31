@@ -52,20 +52,27 @@ web/src/
 
 ---
 
-## 4.3 Halaman Login Ultra-Minimalis & Deteksi Peran Otomatis
+## 4.3 Arsitektur Autentikasi Minimalis & Deteksi Peran Berbasis Audit Keamanan
 
-Halaman login didesain dengan konsep *ultra-minimal single-card* yang ringkas (`max-w-xs`), berfokus pada efisiensi akses tanpa distraksi visual.
+Halaman login direkayasa dengan pendekatan antarmuka terpusat (*ultra-minimal single-card*, `max-w-xs`), dirancang secara spesifik untuk memangkas *time-to-insight* teknisi di lapangan tanpa mengorbankan postur keamanan sistem IoT.
 
 ![Tampilan Halaman Login Ultra-Minimalis](./assets/01_login_page.png)
 
-### Aspek Keamanan & Kenyamanan Pengguna:
-1. **Peniadaan Placeholder yang Membocorkan Akun:**
-   Sesuai prinsip keamanan peramban, field `Email` dan `Kata Sandi` tidak memuat placeholder teks domain atau akun contoh (`placeholder=""`), serta state awal diinisialisasi kosong (`''`) untuk mencegah kebocoran kredensial stasiun.
-2. **Deteksi Peran Otomatis (*Auto-Role Detection*):**
-   Pengguna tidak perlu memilih tombol peran secara manual. Sistem mengidentifikasi hak akses secara otomatis saat kredensial divalidasi:
-   - Jika akun memuat kata kunci `admin` atau `surya` $\implies$ **Administrator** (Akses penuh ke konfigurasi hardware, pinout, kalibrasi, dan manajemen user).
-   - Jika akun memuat kata kunci `agro` atau `pakar` $\implies$ **Agronomist** (Fokus pada analitik perbandingan model BMKG, kurva ETo, dan log cuaca).
-   - Akun umum lainnya $\implies$ **Field Officer / Petugas Lapang** (Akses operasional monitoring dan inspeksi data realtime).
+### 4.3.1 Parameter Audit Keamanan & Ergonomi Akses Pengguna
+
+Dalam evaluasi audit keamanan perangkat lunak (*security & privacy audit*), aspek autentikasi stasiun cuaca Agrinex memenuhi kriteria berikut:
+
+1. **Peniadaan Placeholder yang Membocorkan Akun (*Information Disclosure Mitigation*):**  
+   Mengacu pada standar keamanan peramban dan rekomendasi OWASP terkait pencegahan pembocoran informasi (*credential enumeration & sensitive data leakage*), *field* `Email` dan `Kata Sandi` tidak memuat teks placeholder domain bawaan maupun format akun contoh (`placeholder=""`). Status awal (*initial state*) diinisialisasi secara ketat dalam kondisi string kosong (`''`) guna mengeliminasi potensi paparan struktur akun internal stasiun pada peramban bersama (*shared field devices*).
+
+2. **Deteksi Peran Otomatis (*Auto-Role Detection Engine*):**  
+   Untuk meminimalkan beban kognitif pengguna (*cognitive load reduction*) serta meniadakan kerentanan manipulasi peran pada sisi klien (*client-side role tampering*), sistem tidak menyediakan pemilih peran manual. Penentuan hak akses (*Role-Based Access Control / RBAC*) dieksekusi secara otomatis dan deterministik saat kredensial divalidasi:
+   - **Kredensial dengan Penanda Administratif (`admin`, `ghiffa`, atau `haikal`):**  
+     $\implies$ Diberikan wewenang **Administrator** (Akses penuh tanpa restriksi ke pengaturan perangkat keras, konfigurasi pinout ESP32, matriks kalibrasi sensor, serta konsol manajemen pengguna).
+   - **Kredensial dengan Penanda Analitik Agroklimat (`agro` atau `pakar`):**  
+     $\implies$ Diberikan wewenang **Agronomist** (Akses terfokus pada komparasi data model BMKG, pemodelan kurva evapotranspirasi $ET_0$, analisis defisit tekanan uap VPD, dan riwayat log mikroklimat).
+   - **Kredensial Lapangan / Pengguna Umum Lainnya:**  
+     $\implies$ Diberikan wewenang **Field Officer / Petugas Lapang** (Akses operasional terbatas untuk pemantauan telemetri *real-time* dan pelaporan kondisi sensor).
 
 ---
 
